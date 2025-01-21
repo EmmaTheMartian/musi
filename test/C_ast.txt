@@ -1,15 +1,29 @@
 src.musi.ast.AST(ast.NodeRoot{
-    children: [ast.INode(ast.NodeId{
-        value: 'greet'
-    }), ast.INode(ast.NodeInvoke{
-        func: 'print'
-        args: [ast.INode(ast.NodeString{
-            value: 'Hello, '
-        }), ast.INode(ast.NodeString{
-            value: 'World!'
-        })]
+    children: [ast.INode(ast.NodeLet{
+        name: 'greet'
+        value: ast.INode(ast.NodeFn{
+            args: ['greeting', 'user']
+            code: ast.NodeBlock{
+                nodes: [ast.INode(ast.NodeInvoke{
+                    func: 'printeach'
+                    args: [ast.INode(ast.NodeId{
+                        value: 'greeting'
+                    }), ast.INode(ast.NodeString{
+                        value: ', '
+                    }), ast.INode(ast.NodeId{
+                        value: 'user'
+                    }), ast.INode(ast.NodeString{
+                        value: '!'
+                    })]
+                })]
+            }
+        })
     }), ast.INode(ast.NodeInvoke{
         func: 'greet'
-        args: []
+        args: [ast.INode(ast.NodeString{
+            value: 'Hello'
+        }), ast.INode(ast.NodeString{
+            value: 'World'
+        })]
     })]
 })

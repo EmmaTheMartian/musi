@@ -78,9 +78,13 @@ pub fn (mut p Parser) check(kind TokenKind, value string) bool {
 }
 
 @[inline; direct_array_access]
-fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, close_kind TokenKind, close_value string, start_depth int) []Token {
+fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, close_kind TokenKind, close_value string) []Token {
 	mut tokens := []Token{}
-	mut depth := start_depth
+	mut depth := 1
+
+	println('tokens_until_closing entered on ${p.peek()}')
+	p.expect(open_kind, open_value)
+	p.skip()
 
 	mut token := p.eat() or {
 		panic('musi: reached eof before `${close_value}`')
@@ -110,14 +114,36 @@ fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, c
 	return tokens
 }
 
+fn (mut p Parser) tokens_until(kind TokenKind, value string) []Token {
+	mut tokens := []Token{}
+
+	for {
+		if p.check(kind, value) {
+			break
+		}
+		tokens << p.eat() or {
+			panic('musi: reached eof before `${value}`')
+		}
+	}
+
+	println('tokens_until ended on ${p.peek_n(0)}')
+
+	return tokens
+}
+
 @[inline]
 fn (mut p Parser) parse_invoke() ast.NodeInvoke {
+	println('invoke: ${p.peek()}')
 	p.expect_kind_n(.id, -1)
+	name := p.peek_n(-1).value
 	p.expect(.literal, '(')
-	p.skip()
+	// p.skip()
+	args := p.tokens_until_closing(.literal, '(', .literal, ')')
+	println('args: ${args}')
+	// p.expect(.literal, ')')
 	return ast.NodeInvoke{
-		p.tokens[p.index - 1].value,
-		parse_list(p.tokens_until_closing(.literal, '(', .literal, ')', 1))
+		name,
+		parse_list(args)
 	}
 }
 
@@ -126,21 +152,23 @@ fn (mut p Parser) parse_block() ast.NodeBlock {
 	println('parse_block: ${p.peek_n(0)}')
 	p.expect(.keyword, 'do')
 	return ast.NodeBlock{
-		parse_list(p.tokens_until_closing(.keyword, 'do', .keyword, 'end', 1))
+		parse_list(p.tokens_until_closing(.keyword, 'do', .keyword, 'end'))
 	}
 }
 
 @[inline]
 fn (mut p Parser) parse_fn() ast.NodeFn {
 	p.expect_n(.keyword, 'fn', -1)
-	args := p.tokens_until_closing(.literal, '(', .literal, ')', 1)
+	args := p.tokens_until(.keyword, 'do')
+	println('args: ${args}')
+	// args := p.tokens_until_closing(.literal, '(', .literal, ')', 1)
 	// for arg in args {
 	// 	if arg.kind != .id {
 	// 		eprintln('musi: argument must be an identifier (got ${arg})')
 	// 		exit(1)
 	// 	}
 	// }
-	println('parsefn: ${p.peek()}')
+	println('parsefn: ${p.peek_n(0)}')
 	block := p.parse_block()
 	return ast.NodeFn{
 		args: args.map(|it| it.value),
@@ -151,6 +179,7 @@ fn (mut p Parser) parse_fn() ast.NodeFn {
 @[inline]
 fn (mut p Parser) parse_let() ast.NodeLet {
 	p.expect_kind(.id)
+	name := p.peek().value
 	p.skip()
 	p.expect(.literal, '=')
 	p.skip()
@@ -158,7 +187,7 @@ fn (mut p Parser) parse_let() ast.NodeLet {
 		panic('musi: unexpected eof before let value')
 	}
 	return ast.NodeLet{
-		name: p.peek_n(-1).value
+		name: name
 		value: value
 	}
 }
@@ -169,11 +198,13 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		return none
 	}
 	println('poarse_singleZ: ${token}')
+	println('poarse_singleZ(next): ${p.peek()}')
 	match token.kind {
 		.@none {
 			panic('musi: parse_single given an empty token: ${token}')
 		}
 		.id {
+			// if the next token is an open parenthesis, we are likely invoking something
 			if p.check(.literal, '(') {
 				return p.parse_invoke()
 			} else {

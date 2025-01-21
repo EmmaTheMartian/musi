@@ -1,5 +1,7 @@
-let Greet = fn () do
-	print('Hello, World!')
+let greet = fn greeting user do
+	printeach(greeting ', ' user '!')
 end
 
-greet()
+greet(
+	'Hello'
+	'World')

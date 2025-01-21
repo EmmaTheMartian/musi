@@ -137,7 +137,7 @@ pub fn (mut t Tokenizer) tokenize() {
 		ch = t.next()
 		t.column++
 	}
-	t.tokens << Token{.eof, '', t.line, t.column}
+	// t.tokens << Token{.eof, '', t.line, t.column}
 }
 
 @[inline]

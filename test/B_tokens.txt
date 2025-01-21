@@ -1,16 +1,20 @@
 <keyword:let>
-<id:Greet>
+<id:greet>
 <literal:=>
 <keyword:fn>
-<literal:(>
-<literal:)>
+<id:greeting>
+<id:user>
 <keyword:do>
-<id:print>
+<id:printeach>
 <literal:(>
-<str:Hello, World!>
+<id:greeting>
+<str:, >
+<id:user>
+<str:!>
 <literal:)>
 <keyword:end>
 <id:greet>
 <literal:(>
+<str:Hello>
+<str:World>
 <literal:)>
-<eof:>
