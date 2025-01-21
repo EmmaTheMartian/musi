@@ -1,11 +1,26 @@
 module interpreter
 
-import datatypes { Stack }
-import musi.parser.ast { IVisitor }
-import musi { Value }
+import musi.ast { AST, NodeRoot }
 
-pub struct Interpreter implements IVisitor {
+@[heap; noinit]
+pub struct Interpreter {
 pub mut:
-	stack Stack[Value]
-	
+	scope Scope
+}
+
+@[inline]
+pub fn Interpreter.new() Interpreter {
+	return Interpreter{
+		scope: Scope.new()
+	}
+}
+
+@[inline]
+pub fn (mut i Interpreter) new_scope(tracer string) Scope {
+	return i.scope.make_child(tracer)
+}
+
+@[inline]
+pub fn (mut i Interpreter) run(tree &AST) {
+	i.scope.eval(&NodeRoot(tree))
 }

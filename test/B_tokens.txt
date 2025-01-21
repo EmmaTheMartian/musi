@@ -1,0 +1,16 @@
+<keyword:let>
+<id:Greet>
+<literal:=>
+<keyword:fn>
+<literal:(>
+<literal:)>
+<keyword:do>
+<id:print>
+<literal:(>
+<str:Hello, World!>
+<literal:)>
+<keyword:end>
+<id:greet>
+<literal:(>
+<literal:)>
+<eof:>

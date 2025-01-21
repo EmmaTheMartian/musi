@@ -1,20 +1,26 @@
 module main
 
 import os
-import musi.tokenizer { Tokenizer }
-import musi.parser { Parser }
+import musi.tokenizer
+import musi.parser
+import musi.interpreter
+import musi.stdlib
 
 fn main() {
-	s := os.read_file('samples/html/html.musi')!
-	mut t := Tokenizer{
+	s := os.read_file('samples/hello.musi')!
+	mut t := tokenizer.Tokenizer{
 		input: s
 		ilen: s.len
 	}
-	println(t.input)
+	os.write_file('test/A_input.txt', t.input)!
 
 	t.tokenize()
-	println(t.tokens)
+	tokenizer.write_tokens_to_file(t.tokens, 'test/B_tokens.txt')!
 
-	mut p := Parser{ tokens: t.tokens }
-	p.parse()
+	ast := parser.parse(t.tokens)
+	os.write_file('test/C_ast.txt', ast.str())!
+
+	mut i := interpreter.Interpreter.new()
+	stdlib.apply(mut i.scope)
+	i.run(ast)
 }

@@ -1,0 +1,15 @@
+src.musi.ast.AST(ast.NodeRoot{
+    children: [ast.INode(ast.NodeId{
+        value: 'greet'
+    }), ast.INode(ast.NodeInvoke{
+        func: 'print'
+        args: [ast.INode(ast.NodeString{
+            value: 'Hello, '
+        }), ast.INode(ast.NodeString{
+            value: 'World!'
+        })]
+    }), ast.INode(ast.NodeInvoke{
+        func: 'greet'
+        args: []
+    })]
+})

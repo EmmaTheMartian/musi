@@ -1,0 +1,5 @@
+let Greet = fn () do
+	print('Hello, World!')
+end
+
+greet()

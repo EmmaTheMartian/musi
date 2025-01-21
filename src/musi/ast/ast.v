@@ -1,16 +1,6 @@
 module ast
 
-import musi { Value }
-import musi.tokenizer
-
-pub interface INode {
-	visit(mut IVisitor)
-}
-
-pub interface IVisitor {
-mut:
-	walk(AST)
-}
+pub interface INode { }
 
 @[heap]
 pub type AST = NodeRoot
@@ -28,11 +18,37 @@ pub:
 	args []INode
 }
 
-pub fn (node NodeInvoke) visit(mut visitor IVisitor) Value {}
-
 pub struct NodeString implements INode {
 pub:
 	value string
 }
 
-pub fn (node NodeString) visit(mut visitor IVisitor) Value {}
+pub struct NodeId implements INode {
+pub:
+	value string
+}
+
+pub struct NodeBlock implements INode {
+pub:
+	nodes []INode
+}
+
+pub struct NodeFn implements INode {
+pub:
+	args []string
+	code NodeBlock
+}
+
+pub struct NodeLet implements INode {
+pub:
+	name  string
+	value INode
+}
+
+pub struct NodeAssign implements INode {
+pub:
+	name  string
+	value INode
+}
+
+pub struct NodeEOF implements INode { }

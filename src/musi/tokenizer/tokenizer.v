@@ -1,12 +1,13 @@
 module tokenizer
 
+import os
 import strings
 import strings.textscanner { TextScanner }
 
 pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$'
 pub const numbers = '1234567890'
 pub const valid_id = valid_id_start + numbers
-pub const literals = ';()[]{}\\'
+pub const literals = ':;=()[]{}\\'
 pub const whitespace = ' \r\n\t\f'
 pub const operators = [
 	'==', '!=', '>', '>=', '<', '<=',
@@ -14,8 +15,11 @@ pub const operators = [
 	'++', '--',
 	'<<', '>>',
 ]
-pub const single_char_operators = '+-*/%^|&!:='
-pub const keywords = []string{}
+pub const single_char_operators = '+-*/%^|&!'
+pub const keywords = [
+	'fn', 'do', 'end',
+	'let',
+]
 
 pub enum TokenKind {
 	@none
@@ -27,6 +31,7 @@ pub enum TokenKind {
 	number
 	colon
 	semi
+	eof
 }
 
 pub struct Token {
@@ -47,13 +52,11 @@ pub mut:
 
 @[inline]
 fn (mut t Tokenizer) next_str(quote_kind u8) Token {
-	mut buffer := strings.new_builder(1)
+	mut buffer := strings.new_builder(0)
+	mut ch := t.next()
 	for {
-		ch := t.next()
-		t.column++
-
 		if ch == -1 {
-			eprintln('musi: reached EOL before string termination')
+			eprintln('musi: reached EOF before string termination')
 			exit(1)
 		} else if ch == `\n` {
 			t.line++
@@ -63,6 +66,8 @@ fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 		}
 
 		buffer << u8(ch)
+		ch = t.next()
+		t.column++
 	}
 	panic('musi Tokenizer.next_str: escaped loop, this error should never happen.')
 }
@@ -70,16 +75,16 @@ fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 @[inline]
 fn (mut t Tokenizer) next_id(start u8) Token {
 	mut buffer := strings.new_builder(1)
-	buffer << start
+	mut ch := int(start)
 	for {
-		ch := t.next()
-		t.column++
-
-		if !valid_id.contains_u8(u8(ch)) || ch == -1 {
+		if !valid_id.contains_u8(u8(t.peek())) || t.peek() == -1 {
+			buffer << u8(ch)
 			return Token{.id, buffer.str(), t.line, t.column}
 		}
 
 		buffer << u8(ch)
+		ch = t.next()
+		t.column++
 	}
 	panic('musi Tokenizer.next_id: escaped loop, this error should never happen.')
 }
@@ -100,10 +105,8 @@ fn (mut t Tokenizer) next_operator() Token {
 }
 
 pub fn (mut t Tokenizer) tokenize() {
+	mut ch := t.next()
 	for {
-		ch := t.next()
-		t.column++
-
 		if ch == -1 {
 			break
 		} else if whitespace.contains_u8(u8(ch)) {
@@ -128,6 +131,16 @@ pub fn (mut t Tokenizer) tokenize() {
 			}
 		} else {
 			eprintln('musi: unexpected character: ${u8(ch).ascii_str()} (${ch}) at ${t.line}:${t.column}')
+			exit(1)
 		}
+
+		ch = t.next()
+		t.column++
 	}
+	t.tokens << Token{.eof, '', t.line, t.column}
+}
+
+@[inline]
+pub fn write_tokens_to_file(tokens []Token, path string) ! {
+	os.write_file(path, tokens.map(|it| '<${it.kind}:${it.value}>').join('\n'))!
 }
