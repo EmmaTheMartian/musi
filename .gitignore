@@ -1,6 +1,6 @@
 # Binaries for programs and plugins
 main
-clockwork
+musi
 *.exe
 *.exe~
 *.so
@@ -19,12 +19,11 @@ bin/
 # ENV
 .env
 
-# vweb and database
-*.db
-*.js
-
 # Local V install
 /v/
 
 # Local Clockwork install
 /clockwork/
+
+# musi debug output folder
+/debug/
