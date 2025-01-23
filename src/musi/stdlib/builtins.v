@@ -40,9 +40,7 @@ pub fn apply_builtins(mut scope Scope) {
 		tracer: 'tostring',
 		args: ['thing'],
 		code: fn (mut scope Scope) Value {
-			thing := scope.get_own('thing') or {
-				panic('musi: tonumber: no argument provided')
-			}
+			thing := lib.get_fn_arg_raw(scope, 'thing', 'tonumber')
 			match thing {
 				string {
 					return Value(thing.f64())
@@ -51,7 +49,7 @@ pub fn apply_builtins(mut scope Scope) {
 					return Value(thing)
 				}
 				else {
-					panic('musi: tonumber: cannot cast ${typeof(thing).name} to number')
+					scope.throw('tonumber: cannot cast ${typeof(thing).name} to number')
 				}
 			}
 		}
@@ -63,9 +61,7 @@ pub fn apply_builtins(mut scope Scope) {
 		tracer: 'print',
 		args: ['text']
 		code: fn (mut scope Scope) Value {
-			text := scope.get_own('text') or {
-				panic('musi: print: no text provided')
-			}
+			text := lib.get_fn_arg_raw(scope, 'text', 'print')
 			print(scope.invoke('tostring', {'thing': text}) as string)
 			return interpreter.empty
 		}
@@ -75,10 +71,18 @@ pub fn apply_builtins(mut scope Scope) {
 		tracer: 'println',
 		args: ['text']
 		code: fn (mut scope Scope) Value {
-			text := scope.get_own('text') or {
-				panic('musi: print: no text provided')
-			}
+			text := lib.get_fn_arg_raw(scope, 'text', 'println')
 			println(scope.invoke('tostring', {'thing': text}) as string)
+			return interpreter.empty
+		}
+	})
+
+	scope.new('panic', interpreter.ValueNativeFunction{
+		tracer: 'panic',
+		args: ['text']
+		code: fn (mut scope Scope) Value {
+			text := lib.get_fn_arg_raw(scope, 'text', 'panic')
+			scope.throw(scope.invoke('tostring', {'thing': text}) as string)
 			return interpreter.empty
 		}
 	})
@@ -89,12 +93,9 @@ pub fn apply_builtins(mut scope Scope) {
 		tracer: 'each',
 		args: ['list', 'action']
 		code: fn (mut scope Scope) Value {
-			list := scope.get_own('list') or {
-				panic('musi: each: no list provided')
-			}
-			action := scope.get_own('action') or {
-				panic('musi: each: no action provided')
-			}
+			list := lib.get_fn_arg[[]interpreter.Value](scope, 'list', 'each')
+			action := lib.get_fn_arg_raw(scope, 'action', 'each')
+
 			func := if action is interpreter.ValueFunction {
 				interpreter.IFunctionValue(action)
 			} else if action is interpreter.ValueNativeFunction {
@@ -102,13 +103,11 @@ pub fn apply_builtins(mut scope Scope) {
 			} else {
 				panic('musi: each: action must be a function')
 			}
-			if list is []interpreter.Value {
-				for value in list {
-					func.run(mut scope, {func.args[0]: value})
-				}
-			} else {
-				panic('musi: each: list must be... a list')
+
+			for value in list {
+				func.run(mut scope, {func.args[0]: value})
 			}
+
 			return interpreter.empty
 		}
 	})
@@ -149,12 +148,8 @@ pub fn apply_builtins(mut scope Scope) {
 		tracer: 'equals'
 		args: ['a', 'b']
 		code: fn (mut scope Scope) Value {
-			a := scope.get('a') or {
-				panic('musi: equals: argument `a` not provided')
-			}
-			b := scope.get('b') or {
-				panic('musi: equals: argument `b` not provided')
-			}
+			a := lib.get_fn_arg_raw(scope, 'a', 'equals')
+			b := lib.get_fn_arg_raw(scope, 'b', 'equals')
 			return Value(a == b)
 		}
 	})
@@ -163,12 +158,8 @@ pub fn apply_builtins(mut scope Scope) {
 		tracer: 'not-equals'
 		args: ['a', 'b']
 		code: fn (mut scope Scope) Value {
-			a := scope.get('a') or {
-				panic('musi: equals: argument `a` not provided')
-			}
-			b := scope.get('b') or {
-				panic('musi: equals: argument `b` not provided')
-			}
+			a := lib.get_fn_arg_raw(scope, 'a', 'not-equals')
+			b := lib.get_fn_arg_raw(scope, 'b', 'not-equals')
 			return Value(a != b)
 		}
 	})

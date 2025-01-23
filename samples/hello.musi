@@ -47,3 +47,5 @@ let is-even = fn it do
 	return equals(mod(it 2) 0)
 end
 print-each(filter(range(0 10) is-even))
+
+panic('uh oh')

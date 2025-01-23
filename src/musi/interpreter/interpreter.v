@@ -11,7 +11,7 @@ pub mut:
 @[inline]
 pub fn Interpreter.new() Interpreter {
 	return Interpreter{
-		scope: Scope.new()
+		scope: Scope.new('program')
 	}
 }
 

@@ -11,6 +11,25 @@ pub mut:
 	returned  Value = empty
 }
 
+@[noreturn]
+pub fn (s &Scope) throw(message string) {
+	eprintln('---')
+	eprintln('musi error: ${message}')
+	eprintln('stacktrace:')
+	eprintln(s.get_trace().map(|it| '\t${it}').join('\n'))
+	eprintln('---')
+	exit(1)
+}
+
+pub fn (s &Scope) get_trace() []string {
+	mut trace := []string{}
+	trace << s.tracer
+	if s.parent != unsafe { nil } {
+		trace << s.parent.get_trace()
+	}
+	return trace
+}
+
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
 		ast.NodeInvoke {
@@ -216,9 +235,9 @@ pub fn (s &Scope) make_child(tracer string) Scope {
 }
 
 @[inline]
-pub fn Scope.new() Scope {
+pub fn Scope.new(tracer string) Scope {
 	return Scope {
 		parent: unsafe { nil }
-		tracer: ''
+		tracer: tracer
 	}
 }
