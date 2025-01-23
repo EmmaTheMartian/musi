@@ -1,7 +1,25 @@
 let greet = fn greeting user do
-	printeach(greeting ', ' user '!')
+	each([greeting ', ' user '!'] fn it do
+		print(it)
+	end)
+	println('')
 end
 
-greet(
-	'Hello'
-	'World')
+let sum = fn nums do
+	let s = 0.0
+	each(nums fn x do
+		s = add(s x)
+	end)
+	print('sum: ')
+	println(s)
+end
+
+greet('Hello' 'World')
+
+sum([
+	10
+	0.5
+	15.5
+	14
+	2
+])

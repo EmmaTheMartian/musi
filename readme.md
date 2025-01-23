@@ -11,34 +11,16 @@
 musi is an artistic programming language for creating cohesive domain specific
 languages.
 
-## plans
+musi is pretty heavily inspired by lua, although still feels quite different
+from it.
 
-<!-- by default, musi has no syntax. all of that is defined by the domain's
-implementation. however, musi has a scripting language included in the
-`musi/scripting/` folder. it looks like this: -->
+## artistic?
 
-```musi
-# functions are called with the colon operator (:)
-print: 'hello, world!';
+yes! musi is intended to be used to make domain specific languages, which means
+that its syntax should be comfortable* to read.
 
-const User = fn (name, age)
-	const user = [
-		pair: 'name' to name,
-		pair: 'age' to age
-	];
-end;
+> *comfort with a language's syntax is subjective. musi cannot be perfect, after
+> all!
 
-const gandalf = User:
-
-# named arguments do not use = or anything, we just use the argument's name,
-# then its value
-const numbers = range: from 0 to 10;
-
-# for functions without named arguments, we use commas (,) to separate values.
-list.each: numbers fn (it)
-	print: it;
-end;
-
-# the above could also be written as
-list.each: numbers, print;
-```
+musi can be modified using the v api, although i am planning to make c bindings
+so that musi can be added to basically any project, for any purpose!

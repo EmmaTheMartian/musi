@@ -23,6 +23,11 @@ pub:
 	value string
 }
 
+pub struct NodeNumber implements INode {
+pub:
+	value f64
+}
+
 pub struct NodeId implements INode {
 pub:
 	value string
@@ -49,6 +54,11 @@ pub struct NodeAssign implements INode {
 pub:
 	name  string
 	value INode
+}
+
+pub struct NodeList implements INode {
+pub:
+	values []INode
 }
 
 pub struct NodeEOF implements INode { }

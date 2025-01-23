@@ -21,6 +21,6 @@ fn main() {
 	os.write_file('test/C_ast.txt', ast.str())!
 
 	mut i := interpreter.Interpreter.new()
-	stdlib.apply(mut i.scope)
+	stdlib.apply_all(mut i.scope)
 	i.run(ast)
 }

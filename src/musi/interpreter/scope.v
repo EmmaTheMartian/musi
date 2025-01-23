@@ -13,49 +13,92 @@ pub mut:
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
 		ast.NodeInvoke {
-			variable := s.get(node.func)
-			if variable is ValueFunction {
-				mut args := map[string]Value{}
-				for index, arg in node.args {
-					args[variable.args[index]] = s.eval(arg)
-				}
-				return variable.run(mut s, args)
-			} else if variable is ValueNativeFunction {
-				mut args := map[string]Value{}
-				for index, arg in node.args {
-					args[variable.args[index]] = s.eval(arg)
-				}
-				return variable.run(mut s, args)
-			} else {
-				eprintln('musi: attempted to invoke non-function: ${node.func}')
+			variable := s.get(node.func) or {
+				panic('musi: no such function `${node.func}`')
 			}
+
+			mut args := map[string]Value{}
+			if variable is ValueFunction {
+				if node.args.len != variable.args.len {
+					panic('musi: ${node.args.len} arguments provided but ${variable.args.len} are needed')
+				}
+				for index, arg in variable.args {
+					args[arg] = s.eval(node.args[index])
+				}
+			} else if variable is ValueNativeFunction {
+				if node.args.len != variable.args.len {
+					panic('musi: ${node.args.len} arguments provided but ${variable.args.len} are needed. provided: ${node.args}')
+				}
+				for index, arg in variable.args {
+					args[arg] = s.eval(node.args[index])
+				}
+			} else {
+				panic('musi: attempted to invoke non-function: ${node.func}')
+			}
+
+			return s.invoke(node.func, args)
 		}
 		ast.NodeString {
 			return node.value
 		}
+		ast.NodeNumber {
+			return node.value
+		}
 		ast.NodeId {
 			return s.get(node.value) or {
-				eprintln('musi: unknown variable: ${node.value}')
-				exit(1)
+				panic('musi: unknown variable: ${node.value}')
 			}
 		}
 		ast.NodeBlock {
-			return ValueFunction{
-				tracer: 'anon'
-				code: node
-				args: []
+			for child in node.nodes {
+				s.eval(child)
 			}
+			return empty
+		}
+		ast.NodeFn {
+			return ValueFunction{
+				tracer: 'anonfn'
+				code: node.code
+				args: node.args
+			}
+		}
+		ast.NodeLet {
+			s.new(node.name, s.eval(node.value))
+			return empty //todo: change this to return something useful
+		}
+		ast.NodeAssign {
+			s.set(node.name, s.eval(node.value))
+			return empty //todo: change this to return something useful
+		}
+		ast.NodeList {
+			mut values := []Value{}
+			for value in node.values {
+				values << s.eval(value)
+			}
+			return values
 		}
 		ast.NodeRoot {
 			for child in node.children {
 				s.eval(child)
 			}
+			return empty
 		}
 		else {
-			eprintln('musi: attempted to eval() node of invalid type: ${node}')
+			panic('musi: attempted to eval() node of invalid type: ${node}')
 		}
 	}
-	return empty
+	panic('musi: eval() returned no value. this should never happen, please report it.')
+}
+
+pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
+	variable := s.get(func)
+	if variable is ValueFunction {
+		return variable.run(mut s, args)
+	} else if variable is ValueNativeFunction {
+		return variable.run(mut s, args)
+	} else {
+		panic('musi: attempted to invoke non-function: ${func}')
+	}
 }
 
 @[inline]
@@ -74,7 +117,7 @@ pub fn (s &Scope) scope_of(variable string) ?&Scope {
 	if s.has_own(variable) {
 		return s
 	} else if s.parent != unsafe { nil } {
-		return s.scope_of(variable)
+		return s.parent.scope_of(variable)
 	} else {
 		return none
 	}
@@ -84,7 +127,7 @@ pub fn (s &Scope) scope_of(variable string) ?&Scope {
 pub fn (s &Scope) get(variable string) ?Value {
 	if variable in s.variables {
 		return s.variables[variable] or {
-			panic('uhh, i do not even know what this error would be caused by. just... report it please.')
+			panic('musi: failed to get a variable that... exists? this should never happen, please report this error')
 		}
 	} else if s.parent != unsafe { nil } {
 		return s.parent.get(variable)
@@ -106,10 +149,9 @@ pub fn (s &Scope) get_own(variable string) ?Value {
 
 @[inline]
 pub fn (mut s Scope) new(variable string, value Value) {
-	// we use has_own instead of has so that people can make variables with the same name in lower scopes
+	// we use has_own instead of has so that people can make variables with the same name in child scopes
 	if s.has_own(variable) {
-		eprintln('musi: cannot create a new variable that already exists: ${variable}')
-		exit(1)
+		panic('musi: cannot create a new variable that already exists: ${variable}')
 	} else {
 		s.variables[variable] = value
 	}
@@ -118,8 +160,7 @@ pub fn (mut s Scope) new(variable string, value Value) {
 @[inline]
 pub fn (mut s Scope) set(variable string, value Value) {
 	mut scope := s.scope_of(variable) or {
-		eprintln('musi: cannot set a non-existent variable: ${variable}')
-		exit(1)
+		panic('musi: cannot set a non-existent variable: ${variable}')
 	}
 	scope.variables[variable] = value
 }

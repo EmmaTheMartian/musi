@@ -2,7 +2,13 @@ module interpreter
 
 import musi.ast { NodeBlock }
 
-pub struct ValueNativeFunction {
+pub interface IFunctionValue {
+	args []string
+
+	run(mut Scope, map[string]Value) Value
+}
+
+pub struct ValueNativeFunction implements IFunctionValue {
 pub:
 	tracer string
 	code   fn (mut Scope) Value @[required]
@@ -18,7 +24,7 @@ pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value) Value
 	return func.code(mut scope)
 }
 
-pub struct ValueFunction {
+pub struct ValueFunction implements IFunctionValue {
 pub:
 	tracer string
 	code   NodeBlock
@@ -34,6 +40,10 @@ pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value) Value {
 	return scope.eval(func.code)
 }
 
-pub type Value = string | int | f32 | ValueFunction | ValueNativeFunction
+pub type Value = string
+	| f64
+	| ValueFunction
+	| ValueNativeFunction
+	| []Value
 
 pub const empty = Value{}
