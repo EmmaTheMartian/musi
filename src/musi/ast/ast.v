@@ -61,4 +61,9 @@ pub:
 	values []INode
 }
 
+pub struct NodeReturn implements INode {
+pub:
+	node INode
+}
+
 pub struct NodeEOF implements INode { }
