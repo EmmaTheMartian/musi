@@ -90,6 +90,40 @@ pub fn (mut s Scope) eval(node &INode) Value {
 	panic('musi: eval() returned no value. this should never happen, please report it.')
 }
 
+pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value {
+	if function is ValueFunction {
+		return function.run(mut s, args)
+	} else if function is ValueNativeFunction {
+		return function.run(mut s, args)
+	} else {
+		panic('musi: attempted to invoke non-function: ${function}')
+	}
+}
+
+pub fn (mut s Scope) eval_function_list_args(function Value, arg_list []Value) Value {
+	if function is ValueFunction {
+		mut args := map[string]Value{}
+		if arg_list.len != function.args.len {
+			panic('musi: ${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
+		}
+		for index, arg in function.args {
+			args[arg] = arg_list[index]
+		}
+		return function.run(mut s, args)
+	} else if function is ValueNativeFunction {
+		mut args := map[string]Value{}
+		if arg_list.len != function.args.len {
+			panic('musi: ${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
+		}
+		for index, arg in function.args {
+			args[arg] = arg_list[index]
+		}
+		return function.run(mut s, args)
+	} else {
+		panic('musi: attempted to invoke non-function: ${function}')
+	}
+}
+
 pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
 	variable := s.get(func)
 	if variable is ValueFunction {

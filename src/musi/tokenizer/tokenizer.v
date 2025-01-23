@@ -4,7 +4,7 @@ import os
 import strings
 import strings.textscanner { TextScanner }
 
-pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$'
+pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$-?!'
 pub const numbers = '1234567890'
 pub const valid_number_runes = '.' + numbers // underscores are handled manually in parse_number
 pub const valid_id = valid_id_start + numbers

@@ -42,6 +42,7 @@ pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value) Value {
 
 pub type Value = string
 	| f64
+	| bool
 	| ValueFunction
 	| ValueNativeFunction
 	| []Value
