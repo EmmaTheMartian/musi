@@ -1,3 +1,5 @@
+let void = fn do end
+
 let greet = fn greeting user do
 	each([greeting ', ' user '!'] fn it do
 		print(it)
@@ -23,3 +25,25 @@ sum([
 	14
 	2
 ])
+
+let print-each = fn list do
+	print('[')
+	each(list fn it do
+		print(it)
+		print(', ')
+	end)
+	println(']')
+end
+
+let test = fn do
+	return 1
+end
+println(test())
+
+let my-range = range(0 10)
+print-each(my-range)
+
+let is-even = fn it do
+	return equals(mod(it 2) 0)
+end
+print-each(filter(range(0 10) is-even))

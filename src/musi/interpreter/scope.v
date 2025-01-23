@@ -8,6 +8,7 @@ pub mut:
 	parent    &Scope @[required]
 	tracer    string @[required] // used to help make tracebacks
 	variables map[string]Value
+	returned  Value = empty
 }
 
 pub fn (mut s Scope) eval(node &INode) Value {
@@ -53,7 +54,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			for child in node.nodes {
 				s.eval(child)
 			}
-			return empty
+			return s.returned
 		}
 		ast.NodeFn {
 			return ValueFunction{
@@ -63,12 +64,14 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			}
 		}
 		ast.NodeLet {
-			s.new(node.name, s.eval(node.value))
-			return empty //todo: change this to return something useful
+			value := s.eval(node.value)
+			s.new(node.name, value)
+			return value
 		}
 		ast.NodeAssign {
-			s.set(node.name, s.eval(node.value))
-			return empty //todo: change this to return something useful
+			value := s.eval(node.value)
+			s.set(node.name, value)
+			return value
 		}
 		ast.NodeList {
 			mut values := []Value{}
@@ -77,17 +80,55 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			}
 			return values
 		}
+		ast.NodeReturn {
+			s.returned = s.eval(node.node)
+			return s.returned
+		}
 		ast.NodeRoot {
 			for child in node.children {
 				s.eval(child)
 			}
-			return empty
+			return s.returned
 		}
 		else {
 			panic('musi: attempted to eval() node of invalid type: ${node}')
 		}
 	}
 	panic('musi: eval() returned no value. this should never happen, please report it.')
+}
+
+pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value {
+	if function is ValueFunction {
+		return function.run(mut s, args)
+	} else if function is ValueNativeFunction {
+		return function.run(mut s, args)
+	} else {
+		panic('musi: attempted to invoke non-function: ${function}')
+	}
+}
+
+pub fn (mut s Scope) eval_function_list_args(function Value, arg_list []Value) Value {
+	if function is ValueFunction {
+		mut args := map[string]Value{}
+		if arg_list.len != function.args.len {
+			panic('musi: ${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
+		}
+		for index, arg in function.args {
+			args[arg] = arg_list[index]
+		}
+		return function.run(mut s, args)
+	} else if function is ValueNativeFunction {
+		mut args := map[string]Value{}
+		if arg_list.len != function.args.len {
+			panic('musi: ${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
+		}
+		for index, arg in function.args {
+			args[arg] = arg_list[index]
+		}
+		return function.run(mut s, args)
+	} else {
+		panic('musi: attempted to invoke non-function: ${function}')
+	}
 }
 
 pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {

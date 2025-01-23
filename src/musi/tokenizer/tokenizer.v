@@ -4,7 +4,7 @@ import os
 import strings
 import strings.textscanner { TextScanner }
 
-pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$'
+pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$-?!'
 pub const numbers = '1234567890'
 pub const valid_number_runes = '.' + numbers // underscores are handled manually in parse_number
 pub const valid_id = valid_id_start + numbers
@@ -13,6 +13,7 @@ pub const whitespace = ' \r\n\t\f'
 pub const keywords = [
 	'fn', 'do', 'end',
 	'let',
+	'return'
 ]
 
 pub enum TokenKind {
@@ -41,13 +42,18 @@ pub mut:
 	tokens []Token
 }
 
+@[noreturn]
+pub fn (t &Tokenizer) throw(msg string) {
+	panic('musi: tokenizer @ ${t.line}:${t.column}: ${msg}')
+}
+
 @[inline]
 fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 	mut buffer := strings.new_builder(0)
 	mut ch := t.next()
 	for {
 		if ch == -1 {
-			panic('musi: reached EOF before string termination')
+			t.throw('reached EOF before string termination')
 		} else if ch == `\n` {
 			t.line++
 			t.column = 0
@@ -59,7 +65,7 @@ fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 		ch = t.next()
 		t.column++
 	}
-	panic('musi Tokenizer.next_str: escaped loop, this error should never happen.')
+	t.throw('Tokenizer.next_str: escaped loop, this error should never happen.')
 }
 
 @[inline]
@@ -76,7 +82,7 @@ fn (mut t Tokenizer) next_id(start u8) Token {
 		ch = t.next()
 		t.column++
 	}
-	panic('musi Tokenizer.next_id: escaped loop, this error should never happen.')
+	t.throw('Tokenizer.next_id: escaped loop, this error should never happen.')
 }
 
 @[inline]
@@ -89,10 +95,10 @@ fn (mut t Tokenizer) next_number(start u8) Token {
 			s := buffer.str()
 			if s.contains_u8(`.`) {
 				if s[s.len - 1] == `.` {
-					panic('musi: number cannot end with a period')
+					t.throw('number cannot end with a period')
 				}
 				if s.count('.') > 1 {
-					panic('musi: number cannot have more than one period (.) in it')
+					t.throw('number cannot have more than one period (.) in it')
 				}
 			}
 			return Token{.number, s, t.line, t.column}
@@ -102,7 +108,7 @@ fn (mut t Tokenizer) next_number(start u8) Token {
 		ch = t.next()
 		t.column++
 	}
-	panic('musi Tokenizer.next_number: escaped loop, this error should never happen.')
+	t.throw('Tokenizer.next_number: escaped loop, this error should never happen.')
 }
 
 pub fn (mut t Tokenizer) tokenize() {
@@ -130,8 +136,13 @@ pub fn (mut t Tokenizer) tokenize() {
 			} else {
 				t.tokens << tok
 			}
+		} else if ch == `#` {
+			// continue until \n
+			for ch != `\n` {
+				ch = t.next()
+			}
 		} else {
-			panic('musi: unexpected character: ${u8(ch).ascii_str()} (${ch}) at ${t.line}:${t.column}')
+			t.throw('unexpected character: ${u8(ch).ascii_str()} (${ch}) at ${t.line}:${t.column}')
 		}
 
 		ch = t.next()

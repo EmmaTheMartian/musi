@@ -9,6 +9,15 @@ pub mut:
 	tokens []Token
 }
 
+@[noreturn]
+pub fn (p &Parser) throw(msg string) {
+	if p.index >= p.tokens.len {
+		// eprintln('token dump: ${p.tokens}')
+		panic('musi: parser @ token #${p.index}/${p.tokens.len}: ${msg}')
+	}
+	panic('musi: parser @ ${p.peek().line}:${p.peek().column}: ${msg}')
+}
+
 // eat gets the next token from the parser. nom
 @[inline; direct_array_access]
 fn (mut p Parser) eat() ?Token {
@@ -26,51 +35,51 @@ fn (mut p Parser) skip() {
 }
 
 @[inline; direct_array_access]
-fn (mut p Parser) peek() Token {
+fn (p &Parser) peek() Token {
 	return p.tokens[p.index]
 }
 
 @[inline; direct_array_access]
-fn (mut p Parser) peek_n(n int) Token {
+fn (p &Parser) peek_n(n int) Token {
 	return p.tokens[p.index + n]
 }
 
 @[inline]
-fn (mut p Parser) expect_kind_n(kind TokenKind, n int) {
+fn (p &Parser) expect_kind_n(kind TokenKind, n int) {
 	t := p.peek_n(n)
 	if t.kind != kind {
-		panic('musi: unexpected token: ${t} (expected kind ${kind})')
+		p.throw('unexpected token: ${t} (expected kind ${kind})')
 	}
 }
 
 @[inline]
-fn (mut p Parser) expect_kind(kind TokenKind) {
+fn (p &Parser) expect_kind(kind TokenKind) {
 	p.expect_kind_n(kind, 0)
 }
 
 @[inline]
-fn (mut p Parser) expect_n(kind TokenKind, value string, n int) {
+fn (p &Parser) expect_n(kind TokenKind, value string, n int) {
 	t := p.peek_n(n)
 	if t.kind != kind {
-		panic('musi: unexpected token: ${t} (expected `${kind}` with value `${value}`)')
+		p.throw('unexpected token: ${t} (expected `${kind}` with value `${value}`)')
 	} else if t.value != value {
-		panic('musi: expected `${t.value}` but got `${value}` (${t})')
+		p.throw('expected `${t.value}` but got `${value}` (${t})')
 	}
 }
 
 @[inline]
-fn (mut p Parser) expect(kind TokenKind, value string) {
+fn (p &Parser) expect(kind TokenKind, value string) {
 	p.expect_n(kind, value, 0)
 }
 
 @[inline]
-fn (mut p Parser) check_n(kind TokenKind, value string, n int) bool {
+fn (p &Parser) check_n(kind TokenKind, value string, n int) bool {
 	t := p.peek_n(n)
 	return t.kind == kind && t.value == value
 }
 
 @[inline]
-fn (mut p Parser) check(kind TokenKind, value string) bool {
+fn (p &Parser) check(kind TokenKind, value string) bool {
 	return p.check_n(kind, value, 0)
 }
 
@@ -79,14 +88,22 @@ fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, c
 	mut tokens := []Token{}
 	mut depth := 1
 
+	start_token := p.peek()
+
 	if start_with_open_value {
 		p.expect(open_kind, open_value)
 		p.skip()
 	}
 
 	mut token := p.eat() or {
-		panic('musi: reached eof before `${close_value}`')
+		p.throw('reached eof before `${close_value}` (started at ${start_token.line}:${start_token.column})')
 	}
+
+	if token.kind == close_kind && token.value == close_value {
+		return []
+	}
+
+	println('tuc: ${token}')
 
 	for depth != 0 {
 		if p.check(open_kind, open_value) {
@@ -98,7 +115,7 @@ fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, c
 		tokens << token
 
 		token = p.eat() or {
-			panic('musi: reached eof before `${close_value}`')
+			p.throw('reached eof before `${close_value}` (started at ${start_token.line}:${start_token.column})')
 		}
 	}
 
@@ -108,12 +125,14 @@ fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, c
 fn (mut p Parser) tokens_until(kind TokenKind, value string) []Token {
 	mut tokens := []Token{}
 
+	start_token := p.peek()
+
 	for {
 		if p.check(kind, value) {
 			break
 		}
 		tokens << p.eat() or {
-			panic('musi: reached eof before `${value}`')
+			p.throw('reached eof before `${value}`  (started at ${start_token.line}:${start_token.column})')
 		}
 	}
 
@@ -134,8 +153,11 @@ fn (mut p Parser) parse_invoke() ast.NodeInvoke {
 @[inline]
 fn (mut p Parser) parse_block() ast.NodeBlock {
 	p.expect(.keyword, 'do')
+	tokens := p.tokens_until_closing(.keyword, 'do', .keyword, 'end', true)
+	// p.expect(.keyword, 'end')
+	// p.skip()
 	return ast.NodeBlock{
-		parse_list(p.tokens_until_closing(.keyword, 'do', .keyword, 'end',true))
+		parse_list(tokens)
 	}
 }
 
@@ -158,11 +180,22 @@ fn (mut p Parser) parse_let() ast.NodeLet {
 	p.expect(.literal, '=')
 	p.skip()
 	value := p.parse_single() or {
-		panic('musi: unexpected eof before let value')
+		p.throw('unexpected eof before let value')
 	}
 	return ast.NodeLet{
 		name: name
 		value: value
+	}
+}
+
+@[inline]
+fn (mut p Parser) parse_return() ast.NodeReturn {
+	p.expect_n(.keyword, 'return', -1)
+	node := p.parse_single() or {
+		p.throw('unexpected eof before return value')
+	}
+	return ast.NodeReturn{
+		node: node
 	}
 }
 
@@ -173,7 +206,7 @@ fn (mut p Parser) parse_assign() ast.NodeAssign {
 	p.expect(.literal, '=')
 	p.skip()
 	value := p.parse_single() or {
-		panic('musi: unexpected eof before assignment value')
+		p.throw('unexpected eof before assignment value')
 	}
 	return ast.NodeAssign{
 		name: name
@@ -185,6 +218,8 @@ fn (mut p Parser) parse_assign() ast.NodeAssign {
 fn (mut p Parser) parse_list() ast.NodeList {
 	p.expect_n(.literal, '[', -1)
 	tokens := p.tokens_until_closing(.literal, '[', .literal, ']', false)
+	// p.expect(.literal, ']')
+	// p.skip()
 	return ast.NodeList{
 		values: parse_list(tokens)
 	}
@@ -195,9 +230,10 @@ pub fn (mut parser Parser) parse_single() ?ast.INode {
 	token := parser.eat() or {
 		return none
 	}
+	println('token: ${token}')
 	match token.kind {
 		.@none {
-			panic('musi: parse_single given an empty token: ${token}')
+			parser.throw('parse_single given an empty token: ${token}')
 		}
 		.id {
 			// if the next token is an open parenthesis, we are invoking something
@@ -218,6 +254,8 @@ pub fn (mut parser Parser) parse_single() ?ast.INode {
 				return parser.parse_fn()
 			} else if token.value == 'do' {
 				return parser.parse_block()
+			} else if token.value == 'return' {
+				return parser.parse_return()
 			}
 		}
 		.literal {
@@ -235,7 +273,7 @@ pub fn (mut parser Parser) parse_single() ?ast.INode {
 			return ast.NodeEOF{}
 		}
 	}
-	panic('musi: parse_single given an invalid token: ${token}')
+	parser.throw('parse_single given an invalid token: ${token}')
 }
 
 pub fn parse_list(tokens []Token) []ast.INode {

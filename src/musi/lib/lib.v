@@ -15,3 +15,12 @@ pub fn get_fn_arg[T](scope &Scope, name string, fnname string) T {
 		panic('musi: ${fnname}: argument `${name}` not provided')
 	}
 }
+
+@[inline]
+pub fn get_fn_arg_raw(scope &Scope, name string, fnname string) interpreter.Value {
+	if x := scope.get_own(name) {
+		return x
+	} else {
+		panic('musi: ${fnname}: argument `${name}` not provided')
+	}
+}
