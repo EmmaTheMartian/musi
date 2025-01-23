@@ -12,13 +12,13 @@ fn main() {
 		input: s
 		ilen: s.len
 	}
-	os.write_file('test/A_input.txt', t.input)!
+	// os.write_file('test/A_input.txt', t.input)!
 
 	t.tokenize()
-	tokenizer.write_tokens_to_file(t.tokens, 'test/B_tokens.txt')!
+	// tokenizer.write_tokens_to_file(t.tokens, 'test/B_tokens.txt')!
 
 	ast := parser.parse(t.tokens)
-	os.write_file('test/C_ast.txt', ast.str())!
+	// os.write_file('test/C_ast.txt', ast.str())!
 
 	mut i := interpreter.Interpreter.new()
 	stdlib.apply_all(mut i.scope)
