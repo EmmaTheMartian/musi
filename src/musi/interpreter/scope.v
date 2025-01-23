@@ -8,7 +8,7 @@ pub mut:
 	parent    &Scope @[required]
 	tracer    string @[required] // used to help make tracebacks
 	variables map[string]Value
-	returned  Value = empty
+	returned  ?Value
 }
 
 @[noreturn]
@@ -64,6 +64,9 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		ast.NodeNumber {
 			return node.value
 		}
+		ast.NodeBool {
+			return node.value
+		}
 		ast.NodeId {
 			return s.get(node.value) or {
 				panic('musi: unknown variable: ${node.value}')
@@ -72,8 +75,11 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		ast.NodeBlock {
 			for child in node.nodes {
 				s.eval(child)
+				if s.returned != none {
+					return s.returned
+				}
 			}
-			return s.returned
+			return s.returned or { empty }
 		}
 		ast.NodeFn {
 			return ValueFunction{
@@ -101,13 +107,24 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		}
 		ast.NodeReturn {
 			s.returned = s.eval(node.node)
-			return s.returned
+			return s.returned or { empty }
+		}
+		ast.NodeIf {
+			if s.eval(node.cond) == Value(true) {
+				return s.eval(node.code)
+			} else if els := node.els {
+				return s.eval(els)
+			}
+			return empty
 		}
 		ast.NodeRoot {
 			for child in node.children {
 				s.eval(child)
+				if s.returned != none {
+					return s.returned
+				}
 			}
-			return s.returned
+			return s.returned or { empty }
 		}
 		else {
 			panic('musi: attempted to eval() node of invalid type: ${node}')

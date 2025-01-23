@@ -13,7 +13,7 @@ fn main() {
 		os.mkdir('debug') or { }
 	}
 
-	s := os.read_file('samples/hello.musi')!
+	s := os.read_file('samples/fib.musi')!
 	mut t := tokenizer.Tokenizer{
 		input: s
 		ilen: s.len

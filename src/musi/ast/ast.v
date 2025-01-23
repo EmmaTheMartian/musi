@@ -28,6 +28,11 @@ pub:
 	value f64
 }
 
+pub struct NodeBool implements INode {
+pub:
+	value bool
+}
+
 pub struct NodeId implements INode {
 pub:
 	value string
@@ -64,6 +69,13 @@ pub:
 pub struct NodeReturn implements INode {
 pub:
 	node INode
+}
+
+pub struct NodeIf implements INode {
+pub:
+	cond INode
+	code INode
+	els  ?INode
 }
 
 pub struct NodeEOF implements INode { }

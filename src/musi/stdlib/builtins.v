@@ -144,25 +144,12 @@ pub fn apply_builtins(mut scope Scope) {
 
 	// comparison
 
-	scope.new('equals', interpreter.ValueNativeFunction{
-		tracer: 'equals'
-		args: ['a', 'b']
-		code: fn (mut scope Scope) Value {
-			a := lib.get_fn_arg_raw(scope, 'a', 'equals')
-			b := lib.get_fn_arg_raw(scope, 'b', 'equals')
-			return Value(a == b)
-		}
-	})
-
-	scope.new('not-equals', interpreter.ValueNativeFunction{
-		tracer: 'not-equals'
-		args: ['a', 'b']
-		code: fn (mut scope Scope) Value {
-			a := lib.get_fn_arg_raw(scope, 'a', 'not-equals')
-			b := lib.get_fn_arg_raw(scope, 'b', 'not-equals')
-			return Value(a != b)
-		}
-	})
+	lib.add_comparison_operator(mut scope, 'equals', |a, b| a == b)
+	lib.add_comparison_operator(mut scope, 'not-equals', |a, b| a != b)
+	lib.add_numeric_comparison_operator(mut scope, 'gt', |a, b| a > b)
+	lib.add_numeric_comparison_operator(mut scope, 'lt', |a, b| a < b)
+	lib.add_numeric_comparison_operator(mut scope, 'gteq', |a, b| a >= b)
+	lib.add_numeric_comparison_operator(mut scope, 'lteq', |a, b| a <= b)
 
 	// math
 

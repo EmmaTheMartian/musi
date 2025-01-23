@@ -48,4 +48,23 @@ let is-even = fn it do
 end
 print-each(filter(range(0 10) is-even))
 
-panic('uh oh')
+let something = fn do
+	println('something')
+	return true
+	println('something 2: electric boogaloo (this should not happen!)')
+end
+
+something()
+
+let something-is-broken = fn do
+	panic('i think something is broken. or solar rays hit your computer.')
+end
+
+if true do println('true is true!') end
+else do something-is-broken() end
+
+if false do
+	println('i think something is broken. or solar rays hit your computer.')
+end else do
+	println('false is false!')
+end
