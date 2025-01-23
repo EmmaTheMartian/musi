@@ -1,0 +1,207 @@
+src.musi.ast.AST(ast.NodeRoot{
+    children: [ast.INode(ast.NodeLet{
+        name: 'greet'
+        value: ast.INode(ast.NodeFn{
+            args: ['greeting', 'user']
+            code: ast.NodeBlock{
+                nodes: [ast.INode(ast.NodeInvoke{
+                    func: 'each'
+                    args: [ast.INode(ast.NodeList{
+                        values: [ast.INode(ast.NodeId{
+                            value: 'greeting'
+                        }), ast.INode(ast.NodeString{
+                            value: ', '
+                        }), ast.INode(ast.NodeId{
+                            value: 'user'
+                        }), ast.INode(ast.NodeString{
+                            value: '!'
+                        })]
+                    }), ast.INode(ast.NodeFn{
+                        args: ['it']
+                        code: ast.NodeBlock{
+                            nodes: [ast.INode(ast.NodeInvoke{
+                                func: 'print'
+                                args: [ast.INode(ast.NodeId{
+                                    value: 'it'
+                                })]
+                            })]
+                        }
+                    })]
+                }), ast.INode(ast.NodeInvoke{
+                    func: 'println'
+                    args: [ast.INode(ast.NodeString{
+                        value: ''
+                    })]
+                })]
+            }
+        })
+    }), ast.INode(ast.NodeLet{
+        name: 'sum'
+        value: ast.INode(ast.NodeFn{
+            args: ['nums']
+            code: ast.NodeBlock{
+                nodes: [ast.INode(ast.NodeLet{
+                    name: 's'
+                    value: ast.INode(ast.NodeNumber{
+                        value: 0.0
+                    })
+                }), ast.INode(ast.NodeInvoke{
+                    func: 'each'
+                    args: [ast.INode(ast.NodeId{
+                        value: 'nums'
+                    }), ast.INode(ast.NodeFn{
+                        args: ['x']
+                        code: ast.NodeBlock{
+                            nodes: [ast.INode(ast.NodeAssign{
+                                name: 's'
+                                value: ast.INode(ast.NodeInvoke{
+                                    func: 'add'
+                                    args: [ast.INode(ast.NodeId{
+                                        value: 's'
+                                    }), ast.INode(ast.NodeId{
+                                        value: 'x'
+                                    })]
+                                })
+                            })]
+                        }
+                    })]
+                }), ast.INode(ast.NodeInvoke{
+                    func: 'print'
+                    args: [ast.INode(ast.NodeString{
+                        value: 'sum: '
+                    })]
+                }), ast.INode(ast.NodeInvoke{
+                    func: 'println'
+                    args: [ast.INode(ast.NodeId{
+                        value: 's'
+                    })]
+                })]
+            }
+        })
+    }), ast.INode(ast.NodeInvoke{
+        func: 'greet'
+        args: [ast.INode(ast.NodeString{
+            value: 'Hello'
+        }), ast.INode(ast.NodeString{
+            value: 'World'
+        })]
+    }), ast.INode(ast.NodeInvoke{
+        func: 'sum'
+        args: [ast.INode(ast.NodeList{
+            values: [ast.INode(ast.NodeNumber{
+                value: 10.0
+            }), ast.INode(ast.NodeNumber{
+                value: 0.5
+            }), ast.INode(ast.NodeNumber{
+                value: 15.5
+            }), ast.INode(ast.NodeNumber{
+                value: 14.0
+            }), ast.INode(ast.NodeNumber{
+                value: 2.0
+            })]
+        })]
+    }), ast.INode(ast.NodeLet{
+        name: 'print-each'
+        value: ast.INode(ast.NodeFn{
+            args: ['list']
+            code: ast.NodeBlock{
+                nodes: [ast.INode(ast.NodeInvoke{
+                    func: 'print'
+                    args: [ast.INode(ast.NodeString{
+                        value: '['
+                    })]
+                }), ast.INode(ast.NodeInvoke{
+                    func: 'each'
+                    args: [ast.INode(ast.NodeId{
+                        value: 'list'
+                    }), ast.INode(ast.NodeFn{
+                        args: ['it']
+                        code: ast.NodeBlock{
+                            nodes: [ast.INode(ast.NodeInvoke{
+                                func: 'print'
+                                args: [ast.INode(ast.NodeId{
+                                    value: 'it'
+                                })]
+                            }), ast.INode(ast.NodeInvoke{
+                                func: 'print'
+                                args: [ast.INode(ast.NodeString{
+                                    value: ', '
+                                })]
+                            })]
+                        }
+                    })]
+                }), ast.INode(ast.NodeInvoke{
+                    func: 'println'
+                    args: [ast.INode(ast.NodeString{
+                        value: ']'
+                    })]
+                })]
+            }
+        })
+    }), ast.INode(ast.NodeInvoke{
+        func: 'print-each'
+        args: [ast.INode(ast.NodeInvoke{
+            func: 'range'
+            args: [ast.INode(ast.NodeNumber{
+                value: 0.0
+            }), ast.INode(ast.NodeNumber{
+                value: 10.0
+            })]
+        })]
+    }), ast.INode(ast.NodeInvoke{
+        func: 'print-each'
+        args: [ast.INode(ast.NodeInvoke{
+            func: 'range'
+            args: [ast.INode(ast.NodeNumber{
+                value: 0.0
+            }), ast.INode(ast.NodeNumber{
+                value: 10.0
+            })]
+        })]
+    }), ast.INode(ast.NodeInvoke{
+        func: 'print-each'
+        args: [ast.INode(ast.NodeInvoke{
+            func: 'range'
+            args: [ast.INode(ast.NodeNumber{
+                value: 0.0
+            }), ast.INode(ast.NodeNumber{
+                value: 10.0
+            })]
+        })]
+    }), ast.INode(ast.NodeLet{
+        name: 'is-even'
+        value: ast.INode(ast.NodeFn{
+            args: ['it']
+            code: ast.NodeBlock{
+                nodes: [ast.INode(ast.NodeInvoke{
+                    func: 'equals'
+                    args: [ast.INode(ast.NodeId{
+                        value: 'it'
+                    }), ast.INode(ast.NodeInvoke{
+                        func: 'mod'
+                        args: [ast.INode(ast.NodeId{
+                            value: 'it'
+                        }), ast.INode(ast.NodeNumber{
+                            value: 2.0
+                        })]
+                    })]
+                })]
+            }
+        })
+    }), ast.INode(ast.NodeInvoke{
+        func: 'print-each'
+        args: [ast.INode(ast.NodeInvoke{
+            func: 'filter'
+            args: [ast.INode(ast.NodeInvoke{
+                func: 'range'
+                args: [ast.INode(ast.NodeNumber{
+                    value: 3.0
+                }), ast.INode(ast.NodeNumber{
+                    value: 10.0
+                })]
+            }), ast.INode(ast.NodeId{
+                value: 'is-even'
+            })]
+        })]
+    })]
+})

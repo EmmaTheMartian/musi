@@ -1,0 +1,43 @@
+let greet = fn greeting user do
+	each([greeting ', ' user '!'] fn it do
+		print(it)
+	end)
+	println('')
+end
+
+let sum = fn nums do
+	let s = 0.0
+	each(nums fn x do
+		s = add(s x)
+	end)
+	print('sum: ')
+	println(s)
+end
+
+greet('Hello' 'World')
+
+sum([
+	10
+	0.5
+	15.5
+	14
+	2
+])
+
+let print-each = fn list do
+	print('[')
+	each(list fn it do
+		print(it)
+		print(', ')
+	end)
+	println(']')
+end
+
+print-each(range(0 10))
+print-each(range(0 10))
+print-each(range(0 10))
+
+let is-even = fn it do
+	equals(it mod(it 2))
+end
+print-each(filter(range(3 10) is-even))
