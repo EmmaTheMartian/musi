@@ -12,7 +12,7 @@ pub const literals = ':;=()[]{}\\'
 pub const whitespace = ' \r\n\t\f'
 pub const keywords = [
 	'fn', 'do', 'end',
-	'if', 'else',
+	'if', 'elseif', 'else',
 	'let',
 	'return',
 	'true', 'false',

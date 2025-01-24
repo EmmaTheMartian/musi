@@ -150,6 +150,8 @@ pub fn apply_builtins(mut scope Scope) {
 	lib.add_numeric_comparison_operator(mut scope, 'lt', |a, b| a < b)
 	lib.add_numeric_comparison_operator(mut scope, 'gteq', |a, b| a >= b)
 	lib.add_numeric_comparison_operator(mut scope, 'lteq', |a, b| a <= b)
+	lib.add_bool_comparison_operator(mut scope, 'or', |a, b| a || b)
+	lib.add_bool_comparison_operator(mut scope, 'and', |a, b| a && b)
 
 	// math
 

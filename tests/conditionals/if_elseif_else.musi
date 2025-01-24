@@ -1,0 +1,9 @@
+if false do
+	println('1: fail (if false)')
+end elseif false do
+	println('1: fail (elseif false)')
+end elseif true do
+	println('1: pass (elseif true)')
+end else do
+	println('1: fail (else)')
+end

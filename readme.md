@@ -8,8 +8,8 @@
 >
 > *(toki pona)*
 
-musi is an artistic programming language for creating cohesive domain specific
-languages.
+musi is an artistic programming language for embedding into projects and
+creating cohesive domain specific languages.
 
 musi is pretty heavily inspired by lua, although still feels quite different
 from it.

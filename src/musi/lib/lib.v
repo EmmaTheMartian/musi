@@ -50,3 +50,16 @@ pub fn add_numeric_comparison_operator(mut scope Scope, name string, apply fn (a
 		}
 	})
 }
+
+@[inline]
+pub fn add_bool_comparison_operator(mut scope Scope, name string, apply fn (a bool, b bool) bool) {
+	scope.new(name, interpreter.ValueNativeFunction{
+		tracer: name
+		args: ['a', 'b']
+		code: fn [name, apply] (mut scope Scope) Value {
+			a := lib.get_fn_arg[bool](scope, 'a', name)
+			b := lib.get_fn_arg[bool](scope, 'b', name)
+			return Value(apply(a, b))
+		}
+	})
+}

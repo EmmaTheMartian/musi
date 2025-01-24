@@ -110,10 +110,14 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return s.returned or { empty }
 		}
 		ast.NodeIf {
-			if s.eval(node.cond) == Value(true) {
-				return s.eval(node.code)
-			} else if els := node.els {
-				return s.eval(els)
+			for chain_link in node.chain {
+				if chain_link.cond != none {
+					if s.eval(chain_link.cond) == Value(true) {
+						return s.eval(chain_link.code)
+					}
+				} else {
+					return s.eval(chain_link.code)
+				}
 			}
 			return empty
 		}

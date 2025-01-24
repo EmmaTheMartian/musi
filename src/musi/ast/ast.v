@@ -5,6 +5,13 @@ pub interface INode { }
 @[heap]
 pub type AST = NodeRoot
 
+pub struct IfChainElement {
+pub:
+	// set to `none` for an else statement
+	cond ?INode
+	code INode
+}
+
 // Nodes
 
 pub struct NodeRoot implements INode {
@@ -73,9 +80,7 @@ pub:
 
 pub struct NodeIf implements INode {
 pub:
-	cond INode
-	code INode
-	els  ?INode
+	chain []IfChainElement
 }
 
 pub struct NodeEOF implements INode { }

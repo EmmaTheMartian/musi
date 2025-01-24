@@ -221,24 +221,39 @@ fn (mut p Parser) parse_list() ast.NodeList {
 @[inline]
 pub fn (mut p Parser) parse_if() ast.NodeIf {
 	p.expect_n(.keyword, 'if', -1)
-	cond := p.parse_single() or {
-		p.throw('expected condition after `if` statement.')
+
+	mut chain := []ast.IfChainElement{}
+
+	chain << ast.IfChainElement{
+		cond: p.parse_single() or {
+			p.throw('expected condition after `if` statement.')
+		}
+		code: p.parse_block()
 	}
-	code := p.parse_single() or {
-		p.throw('expected statement after if condition.')
-	}
-	mut els := ?ast.INode(none)
-	if p.check(.keyword, 'else') {
-		p.skip()
-		els = p.parse_single() or {
-			p.throw('expected statement after `else`.')
+
+	// parse `elseif`s
+	for {
+		if p.check(.keyword, 'elseif') {
+			p.skip()
+			chain << ast.IfChainElement{
+				cond: p.parse_single() or {
+					p.throw('expected condition after `if` statement.')
+				}
+				code: p.parse_block()
+			}
+		} else if p.check(.keyword, 'else') {
+			p.skip()
+			chain << ast.IfChainElement{
+				cond: none
+				code: p.parse_block()
+			}
+			break
+		} else {
+			break
 		}
 	}
-	return ast.NodeIf{
-		cond: cond
-		code: code
-		els: els
-	}
+
+	return ast.NodeIf{ chain }
 }
 
 @[inline]

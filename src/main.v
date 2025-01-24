@@ -13,7 +13,15 @@ fn main() {
 		os.mkdir('debug') or { }
 	}
 
-	s := os.read_file('samples/fib.musi')!
+	if os.args.len < 2 {
+		panic('error: no input file specified')
+	}
+
+	if !os.exists(os.args[1]) {
+		panic('error: file ${os.args[1]} does not exist. usage: musi FILE [options]')
+	}
+
+	s := os.read_file(os.args[1])!
 	mut t := tokenizer.Tokenizer{
 		input: s
 		ilen: s.len
