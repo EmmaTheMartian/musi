@@ -1,7 +1,7 @@
 // lib provides helpers for making extension libraries
 module lib
 
-import musi.interpreter { Scope, Value }
+import interpreter { Scope, Value }
 
 @[inline]
 pub fn get_fn_arg[T](scope &Scope, name string, fnname string) T {

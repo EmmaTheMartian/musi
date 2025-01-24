@@ -1,6 +1,6 @@
 module interpreter
 
-import musi.ast { NodeBlock }
+import ast { NodeBlock }
 
 pub interface IFunctionValue {
 	args []string

@@ -1,46 +1,75 @@
 module main
 
 import os
-import musi.tokenizer
-import musi.parser
-import musi.interpreter
-import musi.stdlib
+import cli
+import v.vmod
+import tokenizer
+import parser
+import interpreter
+import stdlib
 
 fn main() {
-	write_debug_output := '--debug' in os.args || '-d' in os.args
-
-	if write_debug_output {
-		os.mkdir('debug') or { }
+	mod := vmod.decode(@VMOD_FILE)!
+	mut cmd := cli.Command{
+		name: 'musi'
+		description: 'musi'
+		version: mod.version
 	}
+	mut run := cli.Command{
+		name: 'run'
+		usage: '<file>'
+		required_args: 1
+		execute: fn (c cli.Command) ! {
+			if !os.exists(c.args[0]) {
+				eprintln('error: file `${c.args[0]}` does not exist.')
+				exit(1)
+			}
 
-	if os.args.len < 2 {
-		panic('error: no input file specified')
-	}
+			write_debug_output := c.flags.get_bool('syntax-debug')!
 
-	if !os.exists(os.args[1]) {
-		panic('error: file ${os.args[1]} does not exist. usage: musi FILE [options]')
-	}
+			if write_debug_output && (!os.exists('debug') || !os.exists('debug/syntax')) {
+				os.mkdir_all('debug/syntax/') or {
+					eprintln('error: failed to create ./debug/syntax/ folders')
+					exit(1)
+				}
+			}
 
-	s := os.read_file(os.args[1])!
-	mut t := tokenizer.Tokenizer{
-		input: s
-		ilen: s.len
-	}
-	if write_debug_output {
-		os.write_file('debug/A_input.txt', t.input)!
-	}
+			s := os.read_file(c.args[0])!
 
-	t.tokenize()
-	if write_debug_output {
-		tokenizer.write_tokens_to_file(t.tokens, 'debug/B_tokens.txt')!
-	}
+			mut t := tokenizer.Tokenizer{
+				input: s
+				ilen: s.len
+			}
 
-	ast := parser.parse(t.tokens)
-	if write_debug_output {
-		os.write_file('debug/C_ast.txt', ast.str())!
-	}
+			t.tokenize()
+			if write_debug_output {
+				tokenizer.write_tokens_to_file(t.tokens, 'debug/syntax/tokens.txt')!
+			}
 
-	mut i := interpreter.Interpreter.new()
-	stdlib.apply_builtins(mut i.scope)
-	i.run(ast)
+			ast := parser.parse(t.tokens)
+			if write_debug_output {
+				os.write_file('debug/syntax/ast.txt', ast.str())!
+			}
+
+			mut i := interpreter.Interpreter.new()
+			if !c.flags.get_bool('no-std')! {
+				stdlib.apply_builtins(mut i.scope)
+			}
+			i.run(ast)
+		}
+	}
+	run.add_flag(cli.Flag{
+		flag:          .bool
+		name:          'syntax-debug'
+		description:   'Enables tokenizer and parser debug output'
+	})
+	run.add_flag(cli.Flag{
+		flag:          .bool
+		name:          'no-std'
+		abbrev:        '-S'
+		description:   'Disables the standard library'
+	})
+	cmd.add_command(run)
+	cmd.setup()
+	cmd.parse(os.args)
 }

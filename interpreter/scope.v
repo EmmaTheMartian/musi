@@ -1,6 +1,6 @@
 module interpreter
 
-import musi.ast { INode, AST }
+import ast { INode, AST }
 
 @[heap; noinit]
 pub struct Scope {

@@ -1,7 +1,7 @@
 module parser
 
-import musi.ast
-import musi.tokenizer { Token, TokenKind }
+import ast
+import tokenizer { Token, TokenKind }
 
 pub struct Parser {
 pub mut:
@@ -257,37 +257,37 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 }
 
 @[inline]
-pub fn (mut parser Parser) parse_single() ?ast.INode {
-	token := parser.eat() or {
+pub fn (mut p Parser) parse_single() ?ast.INode {
+	token := p.eat() or {
 		return none
 	}
 	match token.kind {
 		.@none {
-			parser.throw('parse_single given an empty token: ${token}')
+			p.throw('parse_single given an empty token: ${token}')
 		}
 		.id {
 			// if the next token is an open parenthesis, we are invoking something
-			if parser.check(.literal, '(') {
-				return parser.parse_invoke()
+			if p.check(.literal, '(') {
+				return p.parse_invoke()
 			}
 			// if the next token is an equals sign, we are assigning
-			else if parser.check(.literal, '=') {
-				return parser.parse_assign()
+			else if p.check(.literal, '=') {
+				return p.parse_assign()
 			} else {
 				return ast.NodeId{token.value}
 			}
 		}
 		.keyword {
 			if token.value == 'let' {
-				return parser.parse_let()
+				return p.parse_let()
 			} else if token.value == 'fn' {
-				return parser.parse_fn()
+				return p.parse_fn()
 			} else if token.value == 'do' {
-				return parser.parse_block()
+				return p.parse_block()
 			} else if token.value == 'return' {
-				return parser.parse_return()
+				return p.parse_return()
 			} else if token.value == 'if' {
-				return parser.parse_if()
+				return p.parse_if()
 			} else if token.value == 'true' {
 				return ast.NodeBool{true}
 			} else if token.value == 'false' {
@@ -296,7 +296,7 @@ pub fn (mut parser Parser) parse_single() ?ast.INode {
 		}
 		.literal {
 			if token.value == '[' {
-				return parser.parse_list()
+				return p.parse_list()
 			}
 		}
 		.str {
@@ -309,15 +309,15 @@ pub fn (mut parser Parser) parse_single() ?ast.INode {
 			return ast.NodeEOF{}
 		}
 	}
-	parser.throw('parse_single given an invalid token: ${token}')
+	p.throw('parse_single given an invalid token: ${token}')
 }
 
 pub fn parse_list(tokens []Token) []ast.INode {
-	mut parser := Parser{ tokens: tokens }
+	mut p := Parser{ tokens: tokens }
 	mut nodes := []ast.INode{}
 
 	for {
-		nodes << parser.parse_single() or {
+		nodes << p.parse_single() or {
 			break
 		}
 	}

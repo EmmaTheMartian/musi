@@ -1,6 +1,6 @@
 module interpreter
 
-import musi.ast { AST, NodeRoot }
+import ast { AST, NodeRoot }
 
 @[heap; noinit]
 pub struct Interpreter {

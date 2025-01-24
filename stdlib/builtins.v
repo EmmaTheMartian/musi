@@ -1,7 +1,7 @@
 module stdlib
 
-import musi.interpreter { Scope, Value }
-import musi.lib
+import interpreter { Scope, Value }
+import lib
 
 pub fn apply_builtins(mut scope Scope) {
 	// casting
