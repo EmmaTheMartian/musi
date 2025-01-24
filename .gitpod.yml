@@ -1,3 +1,30 @@
 tasks:
   - name: "Init"
-    command: ./scripts/init.sh
+    command: |
+      #!/usr/bin/env sh
+      set -e
+      # Download V
+      if [ ! -e 'v/' ]
+      then
+        git clone https://github.com/vlang/v
+      fi
+      # Make V
+      cd v
+      if [ ! -e './v' ]
+      then
+        make
+      fi
+      # Symlink V
+      sudo ./v symlink
+      cd ..
+      # Download Clockwork
+      if [ ! -e 'clockwork/' ]
+      then
+        git clone --recurse https://github.com/EmmaTheMartian/clockwork
+      fi
+      # Build and install Clockwork
+      cd clockwork
+      ../v/v run . install
+      cd ..
+      # Install project dependencies
+      clockwork deps

@@ -6,7 +6,7 @@
 >
 > verb: to amuse, to play, to have fun
 >
-> *(toki pona)*
+> *(from toki pona)*
 
 musi is an artistic programming language for embedding into projects and
 creating cohesive domain specific languages.
@@ -24,3 +24,9 @@ that its syntax should be comfortable* to read.
 
 musi can be modified using the v api, although i am planning to make c bindings
 so that musi can be added to basically any project, for any purpose!
+
+**so why does that make it artistic?**
+
+honestly, i do not know! i liked the name "musi" and because this language is
+more of a "canvas" for people to use for their own purposes than a
+general-purpose language, i felt like it could work well.
