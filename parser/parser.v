@@ -18,7 +18,7 @@ pub fn (p &Parser) throw(msg string) {
 }
 
 // eat gets the next token from the parser. nom
-@[inline; direct_array_access]
+@[direct_array_access; inline]
 fn (mut p Parser) eat() ?Token {
 	if p.index >= p.tokens.len {
 		return none
@@ -33,12 +33,12 @@ fn (mut p Parser) skip() {
 	p.index++
 }
 
-@[inline; direct_array_access]
+@[direct_array_access; inline]
 fn (p &Parser) peek() Token {
 	return p.tokens[p.index]
 }
 
-@[inline; direct_array_access]
+@[direct_array_access; inline]
 fn (p &Parser) peek_n(n int) Token {
 	return p.tokens[p.index + n]
 }
@@ -82,7 +82,7 @@ fn (p &Parser) check(kind TokenKind, value string) bool {
 	return p.check_n(kind, value, 0)
 }
 
-@[inline; direct_array_access]
+@[direct_array_access; inline]
 fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, close_kind TokenKind, close_value string, start_with_open_value bool) []Token {
 	mut tokens := []Token{}
 	mut depth := 1
@@ -141,19 +141,14 @@ fn (mut p Parser) parse_invoke() ast.NodeInvoke {
 	p.expect_kind_n(.id, -1)
 	name := p.peek_n(-1).value
 	args := p.tokens_until_closing(.literal, '(', .literal, ')', true)
-	return ast.NodeInvoke{
-		name,
-		parse_list(args)
-	}
+	return ast.NodeInvoke{name, parse_list(args)}
 }
 
 @[inline]
 fn (mut p Parser) parse_block() ast.NodeBlock {
 	p.expect(.keyword, 'do')
 	tokens := p.tokens_until_closing(.keyword, 'do', .keyword, 'end', true)
-	return ast.NodeBlock{
-		parse_list(tokens)
-	}
+	return ast.NodeBlock{parse_list(tokens)}
 }
 
 @[inline]
@@ -162,7 +157,7 @@ fn (mut p Parser) parse_fn() ast.NodeFn {
 	args := p.tokens_until(.keyword, 'do')
 	block := p.parse_block()
 	return ast.NodeFn{
-		args: args.map(|it| it.value),
+		args: args.map(|it| it.value)
 		code: block
 	}
 }
@@ -174,11 +169,9 @@ fn (mut p Parser) parse_let() ast.NodeLet {
 	p.skip()
 	p.expect(.literal, '=')
 	p.skip()
-	value := p.parse_single() or {
-		p.throw('unexpected eof before let value')
-	}
+	value := p.parse_single() or { p.throw('unexpected eof before let value') }
 	return ast.NodeLet{
-		name: name
+		name:  name
 		value: value
 	}
 }
@@ -186,9 +179,7 @@ fn (mut p Parser) parse_let() ast.NodeLet {
 @[inline]
 fn (mut p Parser) parse_return() ast.NodeReturn {
 	p.expect_n(.keyword, 'return', -1)
-	node := p.parse_single() or {
-		p.throw('unexpected eof before return value')
-	}
+	node := p.parse_single() or { p.throw('unexpected eof before return value') }
 	return ast.NodeReturn{
 		node: node
 	}
@@ -200,11 +191,9 @@ fn (mut p Parser) parse_assign() ast.NodeAssign {
 	name := p.peek_n(-1).value
 	p.expect(.literal, '=')
 	p.skip()
-	value := p.parse_single() or {
-		p.throw('unexpected eof before assignment value')
-	}
+	value := p.parse_single() or { p.throw('unexpected eof before assignment value') }
 	return ast.NodeAssign{
-		name: name
+		name:  name
 		value: value
 	}
 }
@@ -225,9 +214,7 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 	mut chain := []ast.IfChainElement{}
 
 	chain << ast.IfChainElement{
-		cond: p.parse_single() or {
-			p.throw('expected condition after `if` statement.')
-		}
+		cond: p.parse_single() or { p.throw('expected condition after `if` statement.') }
 		code: p.parse_block()
 	}
 
@@ -236,9 +223,7 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 		if p.check(.keyword, 'elseif') {
 			p.skip()
 			chain << ast.IfChainElement{
-				cond: p.parse_single() or {
-					p.throw('expected condition after `if` statement.')
-				}
+				cond: p.parse_single() or { p.throw('expected condition after `if` statement.') }
 				code: p.parse_block()
 			}
 		} else if p.check(.keyword, 'else') {
@@ -253,14 +238,12 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 		}
 	}
 
-	return ast.NodeIf{ chain }
+	return ast.NodeIf{chain}
 }
 
 @[inline]
 pub fn (mut p Parser) parse_single() ?ast.INode {
-	token := p.eat() or {
-		return none
-	}
+	token := p.eat() or { return none }
 	match token.kind {
 		.@none {
 			p.throw('parse_single given an empty token: ${token}')
@@ -313,13 +296,13 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 }
 
 pub fn parse_list(tokens []Token) []ast.INode {
-	mut p := Parser{ tokens: tokens }
+	mut p := Parser{
+		tokens: tokens
+	}
 	mut nodes := []ast.INode{}
 
 	for {
-		nodes << p.parse_single() or {
-			break
-		}
+		nodes << p.parse_single() or { break }
 	}
 
 	return nodes
@@ -327,5 +310,7 @@ pub fn parse_list(tokens []Token) []ast.INode {
 
 @[inline]
 pub fn parse(tokens []Token) ast.AST {
-	return ast.AST{ children: parse_list(tokens) }
+	return ast.AST{
+		children: parse_list(tokens)
+	}
 }

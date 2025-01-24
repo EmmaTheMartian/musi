@@ -1,8 +1,7 @@
 module ast
 
-pub interface INode { }
+pub interface INode {}
 
-@[heap]
 pub type AST = NodeRoot
 
 pub struct IfChainElement {
@@ -83,4 +82,4 @@ pub:
 	chain []IfChainElement
 }
 
-pub struct NodeEOF implements INode { }
+pub struct NodeEOF {}

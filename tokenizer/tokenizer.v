@@ -11,11 +11,16 @@ pub const valid_id = valid_id_start + numbers
 pub const literals = ':;=()[]{}\\'
 pub const whitespace = ' \r\n\t\f'
 pub const keywords = [
-	'fn', 'do', 'end',
-	'if', 'elseif', 'else',
+	'fn',
+	'do',
+	'end',
+	'if',
+	'elseif',
+	'else',
 	'let',
 	'return',
-	'true', 'false',
+	'true',
+	'false',
 ]
 
 pub enum TokenKind {

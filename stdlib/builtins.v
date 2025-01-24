@@ -7,12 +7,10 @@ pub fn apply_builtins(mut scope Scope) {
 	// casting
 
 	scope.new('tostring', interpreter.ValueNativeFunction{
-		tracer: 'tostring',
-		args: ['thing'],
-		code: fn (mut scope Scope) Value {
-			thing := scope.get_own('thing') or {
-				panic('musi: tostring: no argument provided')
-			}
+		tracer: 'tostring'
+		args:   ['thing']
+		code:   fn (mut scope Scope) Value {
+			thing := scope.get_own('thing') or { panic('musi: tostring: no argument provided') }
 			match thing {
 				string {
 					return Value(thing)
@@ -32,14 +30,17 @@ pub fn apply_builtins(mut scope Scope) {
 				[]Value {
 					return Value('list')
 				}
+				interpreter.ValueNull {
+					return Value('null')
+				}
 			}
 		}
 	})
 
 	scope.new('tonumber', interpreter.ValueNativeFunction{
-		tracer: 'tostring',
-		args: ['thing'],
-		code: fn (mut scope Scope) Value {
+		tracer: 'tostring'
+		args:   ['thing']
+		code:   fn (mut scope Scope) Value {
 			thing := lib.get_fn_arg_raw(scope, 'thing', 'tonumber')
 			match thing {
 				string {
@@ -58,42 +59,48 @@ pub fn apply_builtins(mut scope Scope) {
 	// input/output
 
 	scope.new('print', interpreter.ValueNativeFunction{
-		tracer: 'print',
-		args: ['text']
-		code: fn (mut scope Scope) Value {
+		tracer: 'print'
+		args:   ['text']
+		code:   fn (mut scope Scope) Value {
 			text := lib.get_fn_arg_raw(scope, 'text', 'print')
-			print(scope.invoke('tostring', {'thing': text}) as string)
-			return interpreter.empty
+			print(scope.invoke('tostring', {
+				'thing': text
+			}) as string)
+			return interpreter.null_value
 		}
 	})
 
 	scope.new('println', interpreter.ValueNativeFunction{
-		tracer: 'println',
-		args: ['text']
-		code: fn (mut scope Scope) Value {
+		tracer: 'println'
+		args:   ['text']
+		code:   fn (mut scope Scope) Value {
 			text := lib.get_fn_arg_raw(scope, 'text', 'println')
-			println(scope.invoke('tostring', {'thing': text}) as string)
-			return interpreter.empty
+			println(scope.invoke('tostring', {
+				'thing': text
+			}) as string)
+			return interpreter.null_value
 		}
 	})
 
 	scope.new('panic', interpreter.ValueNativeFunction{
-		tracer: 'panic',
-		args: ['text']
-		code: fn (mut scope Scope) Value {
+		tracer: 'panic'
+		args:   ['text']
+		code:   fn (mut scope Scope) Value {
 			text := lib.get_fn_arg_raw(scope, 'text', 'panic')
-			scope.throw(scope.invoke('tostring', {'thing': text}) as string)
-			return interpreter.empty
+			scope.throw(scope.invoke('tostring', {
+				'thing': text
+			}) as string)
+			return interpreter.null_value
 		}
 	})
 
 	// loops and generators
 
 	scope.new('each', interpreter.ValueNativeFunction{
-		tracer: 'each',
-		args: ['list', 'action']
-		code: fn (mut scope Scope) Value {
-			list := lib.get_fn_arg[[]interpreter.Value](scope, 'list', 'each')
+		tracer: 'each'
+		args:   ['list', 'action']
+		code:   fn (mut scope Scope) Value {
+			list := lib.get_fn_arg[[]Value](scope, 'list', 'each')
 			action := lib.get_fn_arg_raw(scope, 'action', 'each')
 
 			func := if action is interpreter.ValueFunction {
@@ -105,21 +112,23 @@ pub fn apply_builtins(mut scope Scope) {
 			}
 
 			for value in list {
-				func.run(mut scope, {func.args[0]: value})
+				func.run(mut scope, {
+					func.args[0]: value
+				})
 			}
 
-			return interpreter.empty
+			return interpreter.null_value
 		}
 	})
 
 	scope.new('range', interpreter.ValueNativeFunction{
 		tracer: 'range'
-		args: ['from', 'to']
-		code: fn (mut scope Scope) Value {
+		args:   ['from', 'to']
+		code:   fn (mut scope Scope) Value {
 			from := int(lib.get_fn_arg[f64](scope, 'from', 'range'))
 			to := int(lib.get_fn_arg[f64](scope, 'to', 'range'))
-			mut range := []Value{len: to-from, cap: to-from, init: Value{}}
-			for x in from..to {
+			mut range := []Value{len: to - from, cap: to - from, init: Value{}}
+			for x in from .. to {
 				range[x - from] = Value(f64(x))
 			}
 			return Value(range)
@@ -128,8 +137,8 @@ pub fn apply_builtins(mut scope Scope) {
 
 	scope.new('filter', interpreter.ValueNativeFunction{
 		tracer: 'filter'
-		args: ['list', 'predicate']
-		code: fn (mut scope Scope) Value {
+		args:   ['list', 'predicate']
+		code:   fn (mut scope Scope) Value {
 			to_filter := lib.get_fn_arg[[]Value](scope, 'list', 'filter')
 			predicate := lib.get_fn_arg_raw(scope, 'predicate', 'filter')
 			mut filtered := []Value{}
@@ -156,9 +165,9 @@ pub fn apply_builtins(mut scope Scope) {
 	// math
 
 	scope.new('add', interpreter.ValueNativeFunction{
-		tracer: 'add',
-		args: ['a', 'b'],
-		code: fn (mut scope Scope) Value {
+		tracer: 'add'
+		args:   ['a', 'b']
+		code:   fn (mut scope Scope) Value {
 			a := lib.get_fn_arg[f64](scope, 'a', 'add')
 			b := lib.get_fn_arg[f64](scope, 'b', 'add')
 			return Value(a + b)
@@ -166,9 +175,9 @@ pub fn apply_builtins(mut scope Scope) {
 	})
 
 	scope.new('sub', interpreter.ValueNativeFunction{
-		tracer: 'sub',
-		args: ['a', 'b'],
-		code: fn (mut scope Scope) Value {
+		tracer: 'sub'
+		args:   ['a', 'b']
+		code:   fn (mut scope Scope) Value {
 			a := lib.get_fn_arg[f64](scope, 'a', 'sub')
 			b := lib.get_fn_arg[f64](scope, 'b', 'sub')
 			return Value(a - b)
@@ -176,9 +185,9 @@ pub fn apply_builtins(mut scope Scope) {
 	})
 
 	scope.new('mul', interpreter.ValueNativeFunction{
-		tracer: 'mul',
-		args: ['a', 'b'],
-		code: fn (mut scope Scope) Value {
+		tracer: 'mul'
+		args:   ['a', 'b']
+		code:   fn (mut scope Scope) Value {
 			a := lib.get_fn_arg[f64](scope, 'a', 'mul')
 			b := lib.get_fn_arg[f64](scope, 'b', 'mul')
 			return Value(a * b)
@@ -186,9 +195,9 @@ pub fn apply_builtins(mut scope Scope) {
 	})
 
 	scope.new('div', interpreter.ValueNativeFunction{
-		tracer: 'div',
-		args: ['a', 'b'],
-		code: fn (mut scope Scope) Value {
+		tracer: 'div'
+		args:   ['a', 'b']
+		code:   fn (mut scope Scope) Value {
 			a := lib.get_fn_arg[f64](scope, 'a', 'div')
 			b := lib.get_fn_arg[f64](scope, 'b', 'div')
 			return Value(a / b)
@@ -196,9 +205,9 @@ pub fn apply_builtins(mut scope Scope) {
 	})
 
 	scope.new('mod', interpreter.ValueNativeFunction{
-		tracer: 'mod',
-		args: ['a', 'b'],
-		code: fn (mut scope Scope) Value {
+		tracer: 'mod'
+		args:   ['a', 'b']
+		code:   fn (mut scope Scope) Value {
 			a := int(lib.get_fn_arg[f64](scope, 'a', 'mod'))
 			b := int(lib.get_fn_arg[f64](scope, 'b', 'mod'))
 			return Value(f64(a % b))

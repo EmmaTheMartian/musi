@@ -11,15 +11,15 @@ import stdlib
 fn main() {
 	mod := vmod.decode(@VMOD_FILE)!
 	mut cmd := cli.Command{
-		name: 'musi'
+		name:        'musi'
 		description: 'musi'
-		version: mod.version
+		version:     mod.version
 	}
 	mut run := cli.Command{
-		name: 'run'
-		usage: '<file>'
+		name:          'run'
+		usage:         '<file>'
 		required_args: 1
-		execute: fn (c cli.Command) ! {
+		execute:       fn (c cli.Command) ! {
 			if !os.exists(c.args[0]) {
 				eprintln('error: file `${c.args[0]}` does not exist.')
 				exit(1)
@@ -38,7 +38,7 @@ fn main() {
 
 			mut t := tokenizer.Tokenizer{
 				input: s
-				ilen: s.len
+				ilen:  s.len
 			}
 
 			t.tokenize()
@@ -59,15 +59,15 @@ fn main() {
 		}
 	}
 	run.add_flag(cli.Flag{
-		flag:          .bool
-		name:          'syntax-debug'
-		description:   'Enables tokenizer and parser debug output'
+		flag:        .bool
+		name:        'syntax-debug'
+		description: 'Enables tokenizer and parser debug output'
 	})
 	run.add_flag(cli.Flag{
-		flag:          .bool
-		name:          'no-std'
-		abbrev:        '-S'
-		description:   'Disables the standard library'
+		flag:        .bool
+		name:        'no-std'
+		abbrev:      '-S'
+		description: 'Disables the standard library'
 	})
 	cmd.add_command(run)
 	cmd.setup()

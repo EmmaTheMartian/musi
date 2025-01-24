@@ -29,10 +29,10 @@ pub fn get_fn_arg_raw(scope &Scope, name string, fnname string) Value {
 pub fn add_comparison_operator(mut scope Scope, name string, apply fn (a Value, b Value) bool) {
 	scope.new(name, interpreter.ValueNativeFunction{
 		tracer: name
-		args: ['a', 'b']
-		code: fn [name, apply] (mut scope Scope) Value {
-			a := lib.get_fn_arg_raw(scope, 'a', name)
-			b := lib.get_fn_arg_raw(scope, 'b', name)
+		args:   ['a', 'b']
+		code:   fn [name, apply] (mut scope Scope) Value {
+			a := get_fn_arg_raw(scope, 'a', name)
+			b := get_fn_arg_raw(scope, 'b', name)
 			return Value(apply(a, b))
 		}
 	})
@@ -42,10 +42,10 @@ pub fn add_comparison_operator(mut scope Scope, name string, apply fn (a Value, 
 pub fn add_numeric_comparison_operator(mut scope Scope, name string, apply fn (a f64, b f64) bool) {
 	scope.new(name, interpreter.ValueNativeFunction{
 		tracer: name
-		args: ['a', 'b']
-		code: fn [name, apply] (mut scope Scope) Value {
-			a := lib.get_fn_arg[f64](scope, 'a', name)
-			b := lib.get_fn_arg[f64](scope, 'b', name)
+		args:   ['a', 'b']
+		code:   fn [name, apply] (mut scope Scope) Value {
+			a := get_fn_arg[f64](scope, 'a', name)
+			b := get_fn_arg[f64](scope, 'b', name)
 			return Value(apply(a, b))
 		}
 	})
@@ -55,10 +55,10 @@ pub fn add_numeric_comparison_operator(mut scope Scope, name string, apply fn (a
 pub fn add_bool_comparison_operator(mut scope Scope, name string, apply fn (a bool, b bool) bool) {
 	scope.new(name, interpreter.ValueNativeFunction{
 		tracer: name
-		args: ['a', 'b']
-		code: fn [name, apply] (mut scope Scope) Value {
-			a := lib.get_fn_arg[bool](scope, 'a', name)
-			b := lib.get_fn_arg[bool](scope, 'b', name)
+		args:   ['a', 'b']
+		code:   fn [name, apply] (mut scope Scope) Value {
+			a := get_fn_arg[bool](scope, 'a', name)
+			b := get_fn_arg[bool](scope, 'b', name)
 			return Value(apply(a, b))
 		}
 	})

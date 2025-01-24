@@ -1,6 +1,6 @@
 module interpreter
 
-import ast { INode, AST }
+import ast { INode }
 
 @[heap; noinit]
 pub struct Scope {
@@ -33,9 +33,7 @@ pub fn (s &Scope) get_trace() []string {
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
 		ast.NodeInvoke {
-			variable := s.get(node.func) or {
-				panic('musi: no such function `${node.func}`')
-			}
+			variable := s.get(node.func) or { panic('musi: no such function `${node.func}`') }
 
 			mut args := map[string]Value{}
 			if variable is ValueFunction {
@@ -68,9 +66,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return node.value
 		}
 		ast.NodeId {
-			return s.get(node.value) or {
-				panic('musi: unknown variable: ${node.value}')
-			}
+			return s.get(node.value) or { panic('musi: unknown variable: ${node.value}') }
 		}
 		ast.NodeBlock {
 			for child in node.nodes {
@@ -79,13 +75,13 @@ pub fn (mut s Scope) eval(node &INode) Value {
 					return s.returned
 				}
 			}
-			return s.returned or { empty }
+			return s.returned or { null_value }
 		}
 		ast.NodeFn {
 			return ValueFunction{
 				tracer: 'anonfn'
-				code: node.code
-				args: node.args
+				code:   node.code
+				args:   node.args
 			}
 		}
 		ast.NodeLet {
@@ -107,7 +103,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		}
 		ast.NodeReturn {
 			s.returned = s.eval(node.node)
-			return s.returned or { empty }
+			return s.returned or { null_value }
 		}
 		ast.NodeIf {
 			for chain_link in node.chain {
@@ -119,7 +115,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 					return s.eval(chain_link.code)
 				}
 			}
-			return empty
+			return null_value
 		}
 		ast.NodeRoot {
 			for child in node.children {
@@ -128,7 +124,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 					return s.returned
 				}
 			}
-			return s.returned or { empty }
+			return s.returned or { null_value }
 		}
 		else {
 			panic('musi: attempted to eval() node of invalid type: ${node}')
@@ -189,8 +185,7 @@ pub fn (s &Scope) has_own(variable string) bool {
 
 @[inline]
 pub fn (s &Scope) has(variable string) bool {
-	return variable in s.variables ||
-		(s.parent != unsafe { nil } && s.parent.has(variable))
+	return variable in s.variables || (s.parent != unsafe { nil } && s.parent.has(variable))
 }
 
 @[inline]
@@ -248,7 +243,7 @@ pub fn (mut s Scope) set(variable string, value Value) {
 
 @[inline]
 pub fn (s &Scope) make_child(tracer string) Scope {
-	child := Scope {
+	child := Scope{
 		parent: s
 		tracer: tracer
 	}
@@ -257,7 +252,7 @@ pub fn (s &Scope) make_child(tracer string) Scope {
 
 @[inline]
 pub fn Scope.new(tracer string) Scope {
-	return Scope {
+	return Scope{
 		parent: unsafe { nil }
 		tracer: tracer
 	}
