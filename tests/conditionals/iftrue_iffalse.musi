@@ -1,0 +1,11 @@
+if true do
+	println('1: pass')
+end else do
+	println('1: fail')
+end
+
+if false do
+	println('2: fail')
+end else do
+	println('2: pass')
+end

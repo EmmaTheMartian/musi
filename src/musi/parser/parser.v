@@ -12,7 +12,6 @@ pub mut:
 @[noreturn]
 pub fn (p &Parser) throw(msg string) {
 	if p.index >= p.tokens.len {
-		// eprintln('token dump: ${p.tokens}')
 		panic('musi: parser @ token #${p.index}/${p.tokens.len}: ${msg}')
 	}
 	panic('musi: parser @ ${p.peek().line}:${p.peek().column}: ${msg}')
@@ -63,7 +62,7 @@ fn (p &Parser) expect_n(kind TokenKind, value string, n int) {
 	if t.kind != kind {
 		p.throw('unexpected token: ${t} (expected `${kind}` with value `${value}`)')
 	} else if t.value != value {
-		p.throw('expected `${t.value}` but got `${value}` (${t})')
+		p.throw('expected `${value}` but got `${t.value}` (${t})')
 	}
 }
 
@@ -102,8 +101,6 @@ fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, c
 	if token.kind == close_kind && token.value == close_value {
 		return []
 	}
-
-	println('tuc: ${token}')
 
 	for depth != 0 {
 		if p.check(open_kind, open_value) {
@@ -154,8 +151,6 @@ fn (mut p Parser) parse_invoke() ast.NodeInvoke {
 fn (mut p Parser) parse_block() ast.NodeBlock {
 	p.expect(.keyword, 'do')
 	tokens := p.tokens_until_closing(.keyword, 'do', .keyword, 'end', true)
-	// p.expect(.keyword, 'end')
-	// p.skip()
 	return ast.NodeBlock{
 		parse_list(tokens)
 	}
@@ -218,11 +213,47 @@ fn (mut p Parser) parse_assign() ast.NodeAssign {
 fn (mut p Parser) parse_list() ast.NodeList {
 	p.expect_n(.literal, '[', -1)
 	tokens := p.tokens_until_closing(.literal, '[', .literal, ']', false)
-	// p.expect(.literal, ']')
-	// p.skip()
 	return ast.NodeList{
 		values: parse_list(tokens)
 	}
+}
+
+@[inline]
+pub fn (mut p Parser) parse_if() ast.NodeIf {
+	p.expect_n(.keyword, 'if', -1)
+
+	mut chain := []ast.IfChainElement{}
+
+	chain << ast.IfChainElement{
+		cond: p.parse_single() or {
+			p.throw('expected condition after `if` statement.')
+		}
+		code: p.parse_block()
+	}
+
+	// parse `elseif`s
+	for {
+		if p.check(.keyword, 'elseif') {
+			p.skip()
+			chain << ast.IfChainElement{
+				cond: p.parse_single() or {
+					p.throw('expected condition after `if` statement.')
+				}
+				code: p.parse_block()
+			}
+		} else if p.check(.keyword, 'else') {
+			p.skip()
+			chain << ast.IfChainElement{
+				cond: none
+				code: p.parse_block()
+			}
+			break
+		} else {
+			break
+		}
+	}
+
+	return ast.NodeIf{ chain }
 }
 
 @[inline]
@@ -230,7 +261,6 @@ pub fn (mut parser Parser) parse_single() ?ast.INode {
 	token := parser.eat() or {
 		return none
 	}
-	println('token: ${token}')
 	match token.kind {
 		.@none {
 			parser.throw('parse_single given an empty token: ${token}')
@@ -256,6 +286,12 @@ pub fn (mut parser Parser) parse_single() ?ast.INode {
 				return parser.parse_block()
 			} else if token.value == 'return' {
 				return parser.parse_return()
+			} else if token.value == 'if' {
+				return parser.parse_if()
+			} else if token.value == 'true' {
+				return ast.NodeBool{true}
+			} else if token.value == 'false' {
+				return ast.NodeBool{false}
 			}
 		}
 		.literal {
