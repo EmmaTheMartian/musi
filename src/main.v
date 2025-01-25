@@ -6,7 +6,6 @@ import v.vmod
 import tokenizer
 import parser
 import interpreter
-import stdlib
 
 fn main() {
 	mod := vmod.decode(@VMOD_FILE)!
@@ -20,8 +19,10 @@ fn main() {
 		usage:         '<file>'
 		required_args: 1
 		execute:       fn (c cli.Command) ! {
-			if !os.exists(c.args[0]) {
-				eprintln('error: file `${c.args[0]}` does not exist.')
+			input_file := c.args[0]
+
+			if !os.exists(input_file) {
+				eprintln('error: file `${input_file}` does not exist.')
 				exit(1)
 			}
 
@@ -34,7 +35,7 @@ fn main() {
 				}
 			}
 
-			s := os.read_file(c.args[0])!
+			s := os.read_file(input_file)!
 
 			mut t := tokenizer.Tokenizer{
 				input: s
@@ -51,11 +52,16 @@ fn main() {
 				os.write_file('debug/syntax/ast.txt', ast.str())!
 			}
 
-			mut i := interpreter.Interpreter.new()
-			if !c.flags.get_bool('no-std')! {
-				stdlib.apply_builtins(mut i.scope)
+			println('directory of input file: ${os.dir(input_file)}')
+
+			mut i := interpreter.Interpreter.new(os.dir(input_file), interpreter.InterpreterOptions{
+				use_stdlib: !c.flags.get_bool('no-std')!
+			})
+			file_return_value := i.run(ast)
+
+			if file_return_value != interpreter.null_value {
+				println('returned: ${file_return_value}')
 			}
-			i.run(ast)
 		}
 	}
 	run.add_flag(cli.Flag{

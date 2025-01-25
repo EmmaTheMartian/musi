@@ -1,1 +1,3 @@
 plugins = [ 'v' ]
+
+config:v_main = 'src/main.v'

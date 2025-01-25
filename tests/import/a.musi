@@ -1,0 +1,2 @@
+println(import("b.musi"))
+println(import("b.musi"))

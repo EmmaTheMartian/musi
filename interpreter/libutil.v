@@ -1,7 +1,5 @@
-// lib provides helpers for making extension libraries
-module lib
-
-import interpreter { Scope, Value }
+// provides helpers for making extension libraries
+module interpreter
 
 @[inline]
 pub fn get_fn_arg[T](scope &Scope, name string, fnname string) T {
@@ -27,7 +25,7 @@ pub fn get_fn_arg_raw(scope &Scope, name string, fnname string) Value {
 
 @[inline]
 pub fn add_comparison_operator(mut scope Scope, name string, apply fn (a Value, b Value) bool) {
-	scope.new(name, interpreter.ValueNativeFunction{
+	scope.new(name, ValueNativeFunction{
 		tracer: name
 		args:   ['a', 'b']
 		code:   fn [name, apply] (mut scope Scope) Value {
@@ -40,7 +38,7 @@ pub fn add_comparison_operator(mut scope Scope, name string, apply fn (a Value, 
 
 @[inline]
 pub fn add_numeric_comparison_operator(mut scope Scope, name string, apply fn (a f64, b f64) bool) {
-	scope.new(name, interpreter.ValueNativeFunction{
+	scope.new(name, ValueNativeFunction{
 		tracer: name
 		args:   ['a', 'b']
 		code:   fn [name, apply] (mut scope Scope) Value {
@@ -53,7 +51,7 @@ pub fn add_numeric_comparison_operator(mut scope Scope, name string, apply fn (a
 
 @[inline]
 pub fn add_bool_comparison_operator(mut scope Scope, name string, apply fn (a bool, b bool) bool) {
-	scope.new(name, interpreter.ValueNativeFunction{
+	scope.new(name, ValueNativeFunction{
 		tracer: name
 		args:   ['a', 'b']
 		code:   fn [name, apply] (mut scope Scope) Value {

@@ -5,10 +5,11 @@ import ast { INode }
 @[heap; noinit]
 pub struct Scope {
 pub mut:
-	parent    &Scope @[required]
-	tracer    string @[required] // used to help make tracebacks
-	variables map[string]Value
-	returned  ?Value
+	interpreter &Interpreter @[required]
+	parent      &Scope @[required]
+	tracer      string @[required] // used to help make tracebacks
+	variables   map[string]Value
+	returned    ?Value
 }
 
 @[noreturn]
@@ -179,6 +180,11 @@ pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
 }
 
 @[inline]
+pub fn (mut s Scope) import(mod string) Value {
+	return s.interpreter.import(mut s, mod)
+}
+
+@[inline]
 pub fn (s &Scope) has_own(variable string) bool {
 	return variable in s.variables
 }
@@ -244,6 +250,7 @@ pub fn (mut s Scope) set(variable string, value Value) {
 @[inline]
 pub fn (s &Scope) make_child(tracer string) Scope {
 	child := Scope{
+		interpreter: s.interpreter
 		parent: s
 		tracer: tracer
 	}
@@ -251,8 +258,9 @@ pub fn (s &Scope) make_child(tracer string) Scope {
 }
 
 @[inline]
-pub fn Scope.new(tracer string) Scope {
+pub fn Scope.new(i &Interpreter, tracer string) Scope {
 	return Scope{
+		interpreter: i
 		parent: unsafe { nil }
 		tracer: tracer
 	}
