@@ -38,6 +38,7 @@ pub const operators = [
 	'&',
 	'^',
 	'|',
+	'~',
 	// math
 	'+',
 	'-',
@@ -46,6 +47,7 @@ pub const operators = [
 	'%',
 	// misc
 	'!',
+	'.',
 	'->',
 ]
 

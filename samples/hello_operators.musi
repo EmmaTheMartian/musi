@@ -44,8 +44,7 @@ let my_range = range(0 10)
 printeach(my_range)
 
 let is_even = fn it do
-	let x = it % 2
-	return x == 0
+	return it % 2 == 0
 end
 printeach(filter(range(0 10) is_even))
 

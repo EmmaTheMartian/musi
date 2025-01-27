@@ -12,11 +12,46 @@ pub:
 }
 
 pub struct NodeOperator implements INode {
-pub mut:
+pub:
+	kind Operator
+pub mut: // these are mutable so that we can modify existing nodes to account for precedence
 	left  INode
 	right INode
+}
+
+pub struct NodeUnaryOperator implements INode {
 pub:
-	precedence int @[required]
+	kind  Operator
+	value INode
+}
+
+pub enum Operator {
+	// comparison
+	eq
+	neq
+	gteq
+	lteq
+	gt
+	lt
+	and
+	or
+	// bitwise
+	shift_right
+	shift_left
+	bit_and
+	bit_xor
+	bit_or
+	bit_not
+	// math
+	add
+	sub
+	div
+	mul
+	mod
+	// misc
+	unary_not
+	pipe
+	dot
 }
 
 // nodes
@@ -88,128 +123,6 @@ pub:
 pub struct NodeIf implements INode {
 pub:
 	chain []IfChainElement
-}
-
-// operators
-
-pub struct OperatorEquals {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorNotEquals {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorGtEq {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorLtEq {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorGt {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorLt {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorAnd {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorOr {
-	NodeOperator
-pub:
-	precedence int = 1
-}
-
-pub struct OperatorRightShift {
-	NodeOperator
-pub:
-	precedence int = 10
-}
-
-pub struct OperatorLeftShift {
-	NodeOperator
-pub:
-	precedence int = 10
-}
-
-pub struct OperatorBitwiseAnd {
-	NodeOperator
-pub:
-	precedence int = 10
-}
-
-pub struct OperatorBitwiseXor {
-	NodeOperator
-pub:
-	precedence int = 10
-}
-
-pub struct OperatorBitwiseOr {
-	NodeOperator
-pub:
-	precedence int = 10
-}
-
-pub struct OperatorAdd {
-	NodeOperator
-pub:
-	precedence int = 100
-}
-
-pub struct OperatorSub {
-	NodeOperator
-pub:
-	precedence int = 100
-}
-
-pub struct OperatorDiv {
-	NodeOperator
-pub:
-	precedence int = 100
-}
-
-pub struct OperatorMul {
-	NodeOperator
-pub:
-	precedence int = 100
-}
-
-pub struct OperatorMod {
-	NodeOperator
-pub:
-	precedence int = 100
-}
-
-pub struct OperatorUnaryNot {
-pub:
-	value      INode
-	precedence int = 1000
-}
-
-pub struct OperatorPipe {
-	NodeOperator
-pub:
-	precedence int = 5
 }
 
 pub struct NodeEOF {}

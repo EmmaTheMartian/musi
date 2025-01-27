@@ -318,8 +318,12 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		}
 		.operator {
 			if token.value == '!' {
-				node = ast.OperatorUnaryNot{p.parse_single() or {
-					p.throw('expected expression after not operator')
+				node = ast.NodeUnaryOperator{.unary_not, p.parse_single() or {
+					p.throw('expected expression after unary not operator')
+				}}
+			} else if token.value == '~' {
+				node = ast.NodeUnaryOperator{.bit_not, p.parse_single() or {
+					p.throw('expected expression after bitwise not operator')
 				}}
 			}
 			// all other operators are handled below
@@ -346,19 +350,25 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 
 		mut next_node := p.parse_single() or {
 			p.throw('right side of operator was none. error: ${err}')
-		} as ast.NodeOperator
-
-		next_node_is_greater := next_node.precedence > operator.precedence
-
-		next := if mut next_node is ast.NodeOperator {
-			next_node.left
-		} else {
-			next_node
 		}
 
-		op_node := p.make_operator(operator.value, node_not_none, next)
+		next_node_has_priority := if mut next_node is ast.NodeOperator {
+			precedence_of_node(next_node) > precedence_of_token(operator)
+		} else { false }
 
-		if mut next_node is ast.NodeOperator {
+		next := if next_node_has_priority && mut next_node is ast.NodeOperator {
+			next_node.left
+		} else {
+			ast.INode(next_node)
+		}
+
+		op_node := ast.NodeOperator{
+			kind: get_operator_kind_from_str(operator.value),
+			left: node_not_none,
+			right: next
+		}
+
+		if next_node_has_priority && mut next_node is ast.NodeOperator {
 			next_node.left = op_node
 			return next_node
 		}
@@ -391,103 +401,69 @@ pub fn parse(tokens []Token) ast.AST {
 }
 
 @[inline]
-fn (p &Parser) make_operator(kind string, left ast.INode, right ast.INode) ast.INode {
-	if kind == '==' {
-		return ast.OperatorEquals{
-			left:  left
-			right: right
-		}
-	} else if kind == '!=' {
-		return ast.OperatorNotEquals{
-			left:  left
-			right: right
-		}
-	} else if kind == '>=' {
-		return ast.OperatorGtEq{
-			left:  left
-			right: right
-		}
-	} else if kind == '<=' {
-		return ast.OperatorLtEq{
-			left:  left
-			right: right
-		}
-	} else if kind == '>' {
-		return ast.OperatorGt{
-			left:  left
-			right: right
-		}
-	} else if kind == '<' {
-		return ast.OperatorLt{
-			left:  left
-			right: right
-		}
-	} else if kind == '&&' {
-		return ast.OperatorAnd{
-			left:  left
-			right: right
-		}
-	} else if kind == '||' {
-		return ast.OperatorOr{
-			left:  left
-			right: right
-		}
-	} else if kind == '>>' {
-		return ast.OperatorRightShift{
-			left:  left
-			right: right
-		}
-	} else if kind == '<<' {
-		return ast.OperatorLeftShift{
-			left:  left
-			right: right
-		}
-	} else if kind == '&' {
-		return ast.OperatorBitwiseAnd{
-			left:  left
-			right: right
-		}
-	} else if kind == '^' {
-		return ast.OperatorBitwiseXor{
-			left:  left
-			right: right
-		}
-	} else if kind == '|' {
-		return ast.OperatorBitwiseOr{
-			left:  left
-			right: right
-		}
-	} else if kind == '+' {
-		return ast.OperatorAdd{
-			left:  left
-			right: right
-		}
-	} else if kind == '-' {
-		return ast.OperatorSub{
-			left:  left
-			right: right
-		}
-	} else if kind == '/' {
-		return ast.OperatorDiv{
-			left:  left
-			right: right
-		}
-	} else if kind == '*' {
-		return ast.OperatorMul{
-			left:  left
-			right: right
-		}
-	} else if kind == '%' {
-		return ast.OperatorMod{
-			left:  left
-			right: right
-		}
-	} else if kind == '->' {
-		return ast.OperatorPipe{
-			left:  left
-			right: right
-		}
-	} else {
-		p.throw('make_operator given invalid operator kind ${kind}, this error should never happen, please report it.')
+pub fn get_operator_kind_from_str(value string) ast.Operator {
+	// vfmt off
+	return if value == '==' { ast.Operator.eq }
+	else if value == '!=' { .neq }
+	else if value == '>=' { .gteq }
+	else if value == '<=' { .lteq }
+	else if value == '>' { .gt }
+	else if value == '<' { .lt }
+	else if value == '&&' { .and }
+	else if value == '||' { .or }
+	else if value == '>>' { .shift_right }
+	else if value == '<<' { .shift_left }
+	else if value == '&' { .bit_and }
+	else if value == '^' { .bit_xor }
+	else if value == '|' { .bit_or }
+	else if value == '~' { .bit_not }
+	else if value == '+' { .add }
+	else if value == '-' { .sub }
+	else if value == '/' { .div }
+	else if value == '*' { .mul }
+	else if value == '%' { .mod }
+	else if value == '!' { .unary_not }
+	else if value == '.' { .dot }
+	else if value == '->' { .pipe }
+	else {
+		panic('musi: get_operator_kind_from_str: given invalid value: ${value}')
 	}
+	// vfmt on
+}
+
+// same as
+// https://en.cppreference.com/w/c/language/operator_precedence
+const operator_precedence = {
+	ast.Operator.dot: 0,
+	.pipe: 1,
+	.unary_not: 2,
+	.bit_not: 2,
+	.div: 3,
+	.mul: 3,
+	.mod: 3,
+	.add: 4,
+	.sub: 4,
+	.shift_right: 5,
+	.shift_left: 5,
+	.gteq: 6,
+	.lteq: 6,
+	.gt: 6,
+	.lt: 6,
+	.eq: 7,
+	.neq: 7,
+	.bit_and: 8,
+	.bit_xor: 9,
+	.bit_or: 10,
+	.and: 11,
+	.or: 12,
+}
+
+@[inline]
+pub fn precedence_of_node(node &ast.NodeOperator) int {
+	return operator_precedence[node.kind]
+}
+
+@[inline]
+pub fn precedence_of_token(token &tokenizer.Token) int {
+	return operator_precedence[get_operator_kind_from_str(token.value)]
 }
