@@ -3,6 +3,14 @@ module parser
 import ast
 import tokenizer { Token, TokenKind }
 
+// tokens that we should check for operators after
+const tokens_to_check_for_operators = [
+	TokenKind.id,
+	TokenKind.str,
+	TokenKind.number,
+	TokenKind.boolean,
+]
+
 pub struct Parser {
 pub mut:
 	index  int
@@ -80,6 +88,26 @@ fn (p &Parser) check_n(kind TokenKind, value string, n int) bool {
 @[inline]
 fn (p &Parser) check(kind TokenKind, value string) bool {
 	return p.check_n(kind, value, 0)
+}
+
+@[inline]
+fn (p &Parser) check_kind_n(kind TokenKind, n int) bool {
+	return p.peek_n(n).kind == kind
+}
+
+@[inline]
+fn (p &Parser) check_kind(kind TokenKind) bool {
+	return p.check_kind_n(kind, 0)
+}
+
+@[inline]
+fn (p &Parser) check_value_n(value string, n int) bool {
+	return p.peek_n(n).value == value
+}
+
+@[inline]
+fn (p &Parser) check_value(value string) bool {
+	return p.check_value_n(value, 0)
 }
 
 @[direct_array_access; inline]
@@ -244,6 +272,7 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 @[inline]
 pub fn (mut p Parser) parse_single() ?ast.INode {
 	token := p.eat() or { return none }
+	mut node := ?ast.INode(none)
 	match token.kind {
 		.@none {
 			p.throw('parse_single given an empty token: ${token}')
@@ -251,50 +280,108 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		.id {
 			// if the next token is an open parenthesis, we are invoking something
 			if p.check(.literal, '(') {
-				return p.parse_invoke()
+				node = p.parse_invoke()
 			}
 			// if the next token is an equals sign, we are assigning
 			else if p.check(.literal, '=') {
-				return p.parse_assign()
+				node = p.parse_assign()
 			} else {
-				return ast.NodeId{token.value}
+				node = ast.NodeId{token.value}
 			}
 		}
 		.keyword {
 			if token.value == 'let' {
-				return p.parse_let()
+				node = p.parse_let()
 			} else if token.value == 'fn' {
-				return p.parse_fn()
+				node = p.parse_fn()
 			} else if token.value == 'do' {
-				return p.parse_block()
+				node = p.parse_block()
 			} else if token.value == 'return' {
-				return p.parse_return()
+				node = p.parse_return()
 			} else if token.value == 'if' {
-				return p.parse_if()
-			} else if token.value == 'true' {
-				return ast.NodeBool{true}
-			} else if token.value == 'false' {
-				return ast.NodeBool{false}
+				node = p.parse_if()
 			}
 		}
 		.literal {
 			if token.value == '[' {
-				return p.parse_list()
+				node = p.parse_list()
 			}
 		}
 		.str {
-			return ast.NodeString{token.value}
+			node = ast.NodeString{token.value}
 		}
 		.number {
-			return ast.NodeNumber{token.value.f64()}
+			node = ast.NodeNumber{token.value.f64()}
+		}
+		.boolean {
+			node = ast.NodeBool{token.value == 'true'}
+		}
+		.operator {
+			if token.value == '!' {
+				node = ast.NodeUnaryOperator{.unary_not, p.parse_single() or {
+					p.throw('expected expression after unary not operator')
+				}}
+			} else if token.value == '~' {
+				node = ast.NodeUnaryOperator{.bit_not, p.parse_single() or {
+					p.throw('expected expression after bitwise not operator')
+				}}
+			}
+			// all other operators are handled below
 		}
 		.eof {
-			return ast.NodeEOF{}
+			node = ast.NodeEOF{}
 		}
 	}
-	p.throw('parse_single given an invalid token: ${token}')
+
+	if node == none {
+		p.throw('parse_single returned a `none` node. token: ${token}')
+	}
+
+	// if the next token is an operator, instead of returning this token, we
+	// will return the operator with this as the `left` value.
+	if token.kind in tokens_to_check_for_operators && p.check_kind(.operator) && !p.check_value('!') {
+		operator := p.eat() or {
+			p.throw('parse_single failed to get an operator that we KNOW exists. If this error occurs then your computer was probably hit with solar rays.')
+		}
+
+		node_not_none := node or {
+			p.throw('parse_single node was none but we previously checked it was not. If this error occurs then your computer was probably hit with solar rays.')
+		}
+
+		mut next_node := p.parse_single() or {
+			p.throw('right side of operator was none. error: ${err}')
+		}
+
+		next_node_has_priority := if mut next_node is ast.NodeOperator {
+			precedence_of_node(next_node) > precedence_of_token(operator)
+		} else {
+			false
+		}
+
+		next := if next_node_has_priority && mut next_node is ast.NodeOperator {
+			next_node.left
+		} else {
+			ast.INode(next_node)
+		}
+
+		op_node := ast.NodeOperator{
+			kind:  get_operator_kind_from_str(operator.value)
+			left:  node_not_none
+			right: next
+		}
+
+		if next_node_has_priority && mut next_node is ast.NodeOperator {
+			next_node.left = op_node
+			return next_node
+		}
+
+		return op_node
+	}
+
+	return node
 }
 
+@[inline]
 pub fn parse_list(tokens []Token) []ast.INode {
 	mut p := Parser{
 		tokens: tokens
@@ -313,4 +400,72 @@ pub fn parse(tokens []Token) ast.AST {
 	return ast.AST{
 		children: parse_list(tokens)
 	}
+}
+
+@[inline]
+pub fn get_operator_kind_from_str(value string) ast.Operator {
+	// vfmt off
+	return if value == '==' { ast.Operator.eq }
+	else if value == '!=' { .neq }
+	else if value == '>=' { .gteq }
+	else if value == '<=' { .lteq }
+	else if value == '>' { .gt }
+	else if value == '<' { .lt }
+	else if value == '&&' { .and }
+	else if value == '||' { .or }
+	else if value == '>>' { .shift_right }
+	else if value == '<<' { .shift_left }
+	else if value == '&' { .bit_and }
+	else if value == '^' { .bit_xor }
+	else if value == '|' { .bit_or }
+	else if value == '~' { .bit_not }
+	else if value == '+' { .add }
+	else if value == '-' { .sub }
+	else if value == '/' { .div }
+	else if value == '*' { .mul }
+	else if value == '%' { .mod }
+	else if value == '!' { .unary_not }
+	else if value == '.' { .dot }
+	else if value == '->' { .pipe }
+	else {
+		panic('musi: get_operator_kind_from_str: given invalid value: ${value}')
+	}
+	// vfmt on
+}
+
+// same as
+// https://en.cppreference.com/w/c/language/operator_precedence
+const operator_precedence = {
+	ast.Operator.dot: 0
+	.pipe:            1
+	.unary_not:       2
+	.bit_not:         2
+	.div:             3
+	.mul:             3
+	.mod:             3
+	.add:             4
+	.sub:             4
+	.shift_right:     5
+	.shift_left:      5
+	.gteq:            6
+	.lteq:            6
+	.gt:              6
+	.lt:              6
+	.eq:              7
+	.neq:             7
+	.bit_and:         8
+	.bit_xor:         9
+	.bit_or:          10
+	.and:             11
+	.or:              12
+}
+
+@[inline]
+pub fn precedence_of_node(node &ast.NodeOperator) int {
+	return operator_precedence[node.kind]
+}
+
+@[inline]
+pub fn precedence_of_token(token &Token) int {
+	return operator_precedence[get_operator_kind_from_str(token.value)]
 }

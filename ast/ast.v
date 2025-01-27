@@ -11,7 +11,51 @@ pub:
 	code INode
 }
 
-// Nodes
+pub struct NodeOperator implements INode {
+pub:
+	kind Operator
+pub mut:
+	// these are mutable so that we can modify existing nodes to account for precedence
+	left  INode
+	right INode
+}
+
+pub struct NodeUnaryOperator implements INode {
+pub:
+	kind  Operator
+	value INode
+}
+
+pub enum Operator {
+	// comparison
+	eq
+	neq
+	gteq
+	lteq
+	gt
+	lt
+	and
+	or
+	// bitwise
+	shift_right
+	shift_left
+	bit_and
+	bit_xor
+	bit_or
+	bit_not
+	// math
+	add
+	sub
+	div
+	mul
+	mod
+	// misc
+	unary_not
+	pipe
+	dot
+}
+
+// nodes
 
 pub struct NodeRoot implements INode {
 pub mut:

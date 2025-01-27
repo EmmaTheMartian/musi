@@ -6,8 +6,8 @@ import ast { INode }
 pub struct Scope {
 pub mut:
 	interpreter &Interpreter @[required]
-	parent      &Scope @[required]
-	tracer      string @[required] // used to help make tracebacks
+	parent      &Scope       @[required]
+	tracer      string       @[required] // used to help make tracebacks
 	variables   map[string]Value
 	returned    ?Value
 }
@@ -34,25 +34,25 @@ pub fn (s &Scope) get_trace() []string {
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
 		ast.NodeInvoke {
-			variable := s.get(node.func) or { panic('musi: no such function `${node.func}`') }
+			variable := s.get(node.func) or { s.throw('no such function `${node.func}`') }
 
 			mut args := map[string]Value{}
 			if variable is ValueFunction {
 				if node.args.len != variable.args.len {
-					panic('musi: ${node.args.len} arguments provided but ${variable.args.len} are needed')
+					s.throw('${node.args.len} arguments provided but ${variable.args.len} are needed')
 				}
 				for index, arg in variable.args {
 					args[arg] = s.eval(node.args[index])
 				}
 			} else if variable is ValueNativeFunction {
 				if node.args.len != variable.args.len {
-					panic('musi: ${node.args.len} arguments provided but ${variable.args.len} are needed. provided: ${node.args}')
+					s.throw('${node.args.len} arguments provided but ${variable.args.len} are needed. provided: ${node.args}')
 				}
 				for index, arg in variable.args {
 					args[arg] = s.eval(node.args[index])
 				}
 			} else {
-				panic('musi: attempted to invoke non-function: ${node.func}')
+				s.throw('attempted to invoke non-function: ${node.func}')
 			}
 
 			return s.invoke(node.func, args)
@@ -67,7 +67,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return node.value
 		}
 		ast.NodeId {
-			return s.get(node.value) or { panic('musi: unknown variable: ${node.value}') }
+			return s.get(node.value) or { s.throw('unknown variable: ${node.value}') }
 		}
 		ast.NodeBlock {
 			for child in node.nodes {
@@ -118,6 +118,20 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			}
 			return null_value
 		}
+		ast.NodeUnaryOperator {
+			match node.kind {
+				// .bitwise_not { return Value(f64(int(s.eval(node.left) as f64) ~ int(s.eval(node.right) as f64))) }
+				.unary_not {
+					return Value(!(s.eval(node.value) as bool))
+				}
+				else {
+					s.throw('eval() given a NodeUnaryOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
+				}
+			}
+		}
+		ast.NodeOperator {
+			return s.eval_operator(node)
+		}
 		ast.NodeRoot {
 			for child in node.children {
 				s.eval(child)
@@ -128,10 +142,10 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return s.returned or { null_value }
 		}
 		else {
-			panic('musi: attempted to eval() node of invalid type: ${node}')
+			s.throw('attempted to eval() node of invalid type: ${node}')
 		}
 	}
-	panic('musi: eval() returned no value. this should never happen, please report it.')
+	s.throw('eval() returned no value. this should never happen, please report it.')
 }
 
 pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value {
@@ -140,7 +154,7 @@ pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value 
 	} else if function is ValueNativeFunction {
 		return function.run(mut s, args)
 	} else {
-		panic('musi: attempted to invoke non-function: ${function}')
+		s.throw('attempted to invoke non-function: ${function}')
 	}
 }
 
@@ -148,7 +162,7 @@ pub fn (mut s Scope) eval_function_list_args(function Value, arg_list []Value) V
 	if function is ValueFunction {
 		mut args := map[string]Value{}
 		if arg_list.len != function.args.len {
-			panic('musi: ${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
+			s.throw('${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
 		}
 		for index, arg in function.args {
 			args[arg] = arg_list[index]
@@ -157,25 +171,57 @@ pub fn (mut s Scope) eval_function_list_args(function Value, arg_list []Value) V
 	} else if function is ValueNativeFunction {
 		mut args := map[string]Value{}
 		if arg_list.len != function.args.len {
-			panic('musi: ${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
+			s.throw('${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
 		}
 		for index, arg in function.args {
 			args[arg] = arg_list[index]
 		}
 		return function.run(mut s, args)
 	} else {
-		panic('musi: attempted to invoke non-function: ${function}')
+		s.throw('attempted to invoke non-function: ${function}')
 	}
 }
 
+@[inline]
+fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
+	match node.kind {
+		// vfmt off
+		.eq { return Value(s.eval(node.left) == s.eval(node.right)) }
+		.neq { return Value(s.eval(node.left) != s.eval(node.right)) }
+		.gteq { return Value((s.eval(node.left) as f64) >= (s.eval(node.right) as f64)) }
+		.lteq { return Value((s.eval(node.left) as f64) <= (s.eval(node.right) as f64)) }
+		.gt { return Value((s.eval(node.left) as f64) > (s.eval(node.right) as f64)) }
+		.lt { return Value((s.eval(node.left) as f64) < (s.eval(node.right) as f64)) }
+		.and { return Value((s.eval(node.left) as bool) && (s.eval(node.right) as bool)) }
+		.or { return Value((s.eval(node.left) as bool) || (s.eval(node.right) as bool)) }
+		.shift_right { return Value(f64(int(s.eval(node.left) as f64) >> int(s.eval(node.right) as f64))) }
+		.shift_left { return Value(f64(int(s.eval(node.left) as f64) << int(s.eval(node.right) as f64))) }
+		.bit_and { return Value(f64(int(s.eval(node.left) as f64) & int(s.eval(node.right) as f64))) }
+		.bit_xor { return Value(f64(int(s.eval(node.left) as f64) ^ int(s.eval(node.right) as f64))) }
+		.bit_or { return Value(f64(int(s.eval(node.left) as f64) | int(s.eval(node.right) as f64))) }
+		.add { return Value((s.eval(node.left) as f64) + (s.eval(node.right) as f64)) }
+		.sub { return Value((s.eval(node.left) as f64) - (s.eval(node.right) as f64)) }
+		.div { return Value((s.eval(node.left) as f64) / (s.eval(node.right) as f64)) }
+		.mul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
+		.mod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
+		.pipe { }
+		.dot { }
+		// vfmt on
+		else {
+			s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
+		}
+	}
+	s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
+}
+
 pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
-	variable := s.get(func)
+	variable := s.get(func) or { s.throw('cannot invoke non-existent function `${func}`') }
 	if variable is ValueFunction {
 		return variable.run(mut s, args)
 	} else if variable is ValueNativeFunction {
 		return variable.run(mut s, args)
 	} else {
-		panic('musi: attempted to invoke non-function: ${func}')
+		s.throw('attempted to invoke non-function: ${func}')
 	}
 }
 
@@ -209,7 +255,7 @@ pub fn (s &Scope) scope_of(variable string) ?&Scope {
 pub fn (s &Scope) get(variable string) ?Value {
 	if variable in s.variables {
 		return s.variables[variable] or {
-			panic('musi: failed to get a variable that... exists? this should never happen, please report this error')
+			s.throw('failed to get a variable that... exists? this should never happen, please report this error')
 		}
 	} else if s.parent != unsafe { nil } {
 		return s.parent.get(variable)
@@ -222,7 +268,7 @@ pub fn (s &Scope) get(variable string) ?Value {
 pub fn (s &Scope) get_own(variable string) ?Value {
 	if variable in s.variables {
 		return s.variables[variable] or {
-			panic('uhh, i do not even know what this error would be caused by. just... report it please.')
+			s.throw('uhh, i do not even know what this error would be caused by. just... report it please.')
 		}
 	} else {
 		return none
@@ -233,7 +279,7 @@ pub fn (s &Scope) get_own(variable string) ?Value {
 pub fn (mut s Scope) new(variable string, value Value) {
 	// we use has_own instead of has so that people can make variables with the same name in child scopes
 	if s.has_own(variable) {
-		panic('musi: cannot create a new variable that already exists: ${variable}')
+		s.throw('cannot create a new variable that already exists: ${variable}')
 	} else {
 		s.variables[variable] = value
 	}
@@ -242,7 +288,7 @@ pub fn (mut s Scope) new(variable string, value Value) {
 @[inline]
 pub fn (mut s Scope) set(variable string, value Value) {
 	mut scope := s.scope_of(variable) or {
-		panic('musi: cannot set a non-existent variable: ${variable}')
+		s.throw('cannot set a non-existent variable: ${variable}')
 	}
 	scope.variables[variable] = value
 }
@@ -251,8 +297,8 @@ pub fn (mut s Scope) set(variable string, value Value) {
 pub fn (s &Scope) make_child(tracer string) Scope {
 	child := Scope{
 		interpreter: s.interpreter
-		parent: s
-		tracer: tracer
+		parent:      s
+		tracer:      tracer
 	}
 	return child
 }
@@ -261,7 +307,7 @@ pub fn (s &Scope) make_child(tracer string) Scope {
 pub fn Scope.new(i &Interpreter, tracer string) Scope {
 	return Scope{
 		interpreter: i
-		parent: unsafe { nil }
-		tracer: tracer
+		parent:      unsafe { nil }
+		tracer:      tracer
 	}
 }

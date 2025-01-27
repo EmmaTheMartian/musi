@@ -17,14 +17,9 @@ tasks:
       # Symlink V
       sudo ./v symlink
       cd ..
+      # Download v-analyzer
+      v download -RD https://raw.githubusercontent.com/vlang/v-analyzer/main/install.vsh
       # Download Clockwork
-      if [ ! -e 'clockwork/' ]
-      then
-        git clone --recurse https://github.com/EmmaTheMartian/clockwork
-      fi
-      # Build and install Clockwork
-      cd clockwork
-      ../v/v run . install
-      cd ..
+      v download -RD https://raw.githubusercontent.com/EmmaTheMartian/clockwork/refs/heads/main/scripts/install.vsh
       # Install project dependencies
       clockwork deps

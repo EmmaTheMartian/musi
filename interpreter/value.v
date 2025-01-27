@@ -40,9 +40,16 @@ pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value) Value {
 	return scope.eval(func.code)
 }
 
-pub struct ValueNull { }
+pub struct ValueNull {}
 
-pub type Value = string | f64 | bool | ValueFunction | ValueNativeFunction | []Value | map[string]Value | ValueNull
+pub type Value = string
+	| f64
+	| bool
+	| ValueFunction
+	| ValueNativeFunction
+	| []Value
+	| map[string]Value
+	| ValueNull
 
 pub const null_value = Value(ValueNull{})
 pub const true_value = Value(true)

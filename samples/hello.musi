@@ -10,7 +10,7 @@ end
 let sum = fn nums do
 	let s = 0.0
 	each(nums fn x do
-		s = add(s x)
+		s = s + x
 	end)
 	print('sum: ')
 	println(s)
@@ -26,7 +26,7 @@ sum([
 	2
 ])
 
-let print-each = fn list do
+let printeach = fn list do
 	print('[')
 	each(list fn it do
 		print(it)
@@ -40,13 +40,13 @@ let test = fn do
 end
 println(test())
 
-let my-range = range(0 10)
-print-each(my-range)
+let my_range = range(0 10)
+printeach(my_range)
 
-let is-even = fn it do
-	return equals(mod(it 2) 0)
+let is_even = fn it do
+	return it % 2 == 0
 end
-print-each(filter(range(0 10) is-even))
+printeach(filter(range(0 10) is_even))
 
 let something = fn do
 	println('something')
@@ -56,12 +56,12 @@ end
 
 something()
 
-let something-is-broken = fn do
+let something_is_broken = fn do
 	panic('i think something is broken. or solar rays hit your computer.')
 end
 
 if true do println('true is true!') end
-else do something-is-broken() end
+else do something_is_broken() end
 
 if false do
 	println('i think something is broken. or solar rays hit your computer.')

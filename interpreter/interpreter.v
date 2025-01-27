@@ -24,7 +24,7 @@ pub mut:
 pub fn Interpreter.new(root_path string, options InterpreterOptions) &Interpreter {
 	mut i := &Interpreter{
 		import_root_path: root_path
-		root_scope: Scope.new(unsafe { nil }, 'program')
+		root_scope:       Scope.new(unsafe { nil }, 'program')
 	}
 	i.root_scope.interpreter = i
 	if i.options.use_stdlib {
@@ -74,9 +74,7 @@ pub fn (mut i Interpreter) run_file(path string) Value {
 		i.root_scope.throw('error: file `${path}` does not exist.')
 	}
 
-	s := os.read_file(path) or {
-		i.root_scope.throw('error: failed to read file `${path}`')
-	}
+	s := os.read_file(path) or { i.root_scope.throw('error: failed to read file `${path}`') }
 
 	mut t := tokenizer.Tokenizer{
 		input: s
@@ -95,9 +93,7 @@ pub fn (mut i Interpreter) run_file_isolated(path string) Value {
 		i.root_scope.throw('error: file `${path}` does not exist.')
 	}
 
-	s := os.read_file(path) or {
-		i.root_scope.throw('error: failed to read file `${path}`')
-	}
+	s := os.read_file(path) or { i.root_scope.throw('error: failed to read file `${path}`') }
 
 	mut t := tokenizer.Tokenizer{
 		input: s
