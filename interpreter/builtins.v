@@ -164,7 +164,7 @@ pub fn apply_builtins(mut scope Scope) {
 	// comparison
 
 	add_comparison_operator(mut scope, 'equals', |a, b| a == b)
-	add_comparison_operator(mut scope, 'not-equals', |a, b| a != b)
+	add_comparison_operator(mut scope, 'notequals', |a, b| a != b)
 	add_numeric_comparison_operator(mut scope, 'gt', |a, b| a > b)
 	add_numeric_comparison_operator(mut scope, 'lt', |a, b| a < b)
 	add_numeric_comparison_operator(mut scope, 'gteq', |a, b| a >= b)

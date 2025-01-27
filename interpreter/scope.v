@@ -6,8 +6,8 @@ import ast { INode }
 pub struct Scope {
 pub mut:
 	interpreter &Interpreter @[required]
-	parent      &Scope @[required]
-	tracer      string @[required] // used to help make tracebacks
+	parent      &Scope       @[required]
+	tracer      string       @[required] // used to help make tracebacks
 	variables   map[string]Value
 	returned    ?Value
 }
@@ -118,6 +118,28 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			}
 			return null_value
 		}
+		// vfmt off
+		ast.OperatorEquals { return Value(s.eval(node.left) == s.eval(node.right)) }
+		ast.OperatorNotEquals { return Value(s.eval(node.left) != s.eval(node.right)) }
+		ast.OperatorGtEq { return Value((s.eval(node.left) as f64) >= (s.eval(node.right) as f64)) }
+		ast.OperatorLtEq { return Value((s.eval(node.left) as f64) <= (s.eval(node.right) as f64)) }
+		ast.OperatorGt { return Value((s.eval(node.left) as f64) > (s.eval(node.right) as f64)) }
+		ast.OperatorLt { return Value((s.eval(node.left) as f64) < (s.eval(node.right) as f64)) }
+		ast.OperatorAnd { return Value((s.eval(node.left) as bool) && (s.eval(node.right) as bool)) }
+		ast.OperatorOr { return Value((s.eval(node.left) as bool) || (s.eval(node.right) as bool)) }
+		ast.OperatorRightShift { return Value(f64(int(s.eval(node.left) as f64) >> int(s.eval(node.right) as f64))) }
+		ast.OperatorLeftShift { return Value(f64(int(s.eval(node.left) as f64) << int(s.eval(node.right) as f64))) }
+		ast.OperatorBitwiseAnd { return Value(f64(int(s.eval(node.left) as f64) & int(s.eval(node.right) as f64))) }
+		ast.OperatorBitwiseXor { return Value(f64(int(s.eval(node.left) as f64) ^ int(s.eval(node.right) as f64))) }
+		ast.OperatorBitwiseOr { return Value(f64(int(s.eval(node.left) as f64) | int(s.eval(node.right) as f64))) }
+		ast.OperatorAdd { return Value((s.eval(node.left) as f64) + (s.eval(node.right) as f64)) }
+		ast.OperatorSub { return Value((s.eval(node.left) as f64) - (s.eval(node.right) as f64)) }
+		ast.OperatorDiv { return Value((s.eval(node.left) as f64) / (s.eval(node.right) as f64)) }
+		ast.OperatorMul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
+		ast.OperatorMod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
+		ast.OperatorUnaryNot { return Value(!(s.eval(node.value) as bool)) }
+		ast.OperatorPipe { }
+		// vfmt on
 		ast.NodeRoot {
 			for child in node.children {
 				s.eval(child)
@@ -251,8 +273,8 @@ pub fn (mut s Scope) set(variable string, value Value) {
 pub fn (s &Scope) make_child(tracer string) Scope {
 	child := Scope{
 		interpreter: s.interpreter
-		parent: s
-		tracer: tracer
+		parent:      s
+		tracer:      tracer
 	}
 	return child
 }
@@ -261,7 +283,7 @@ pub fn (s &Scope) make_child(tracer string) Scope {
 pub fn Scope.new(i &Interpreter, tracer string) Scope {
 	return Scope{
 		interpreter: i
-		parent: unsafe { nil }
-		tracer: tracer
+		parent:      unsafe { nil }
+		tracer:      tracer
 	}
 }

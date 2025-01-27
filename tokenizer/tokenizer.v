@@ -4,7 +4,7 @@ import os
 import strings
 import strings.textscanner { TextScanner }
 
-pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$-?!'
+pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$?'
 pub const numbers = '1234567890'
 pub const valid_number_runes = '.' + numbers // underscores are handled manually in parse_number
 pub const valid_id = valid_id_start + numbers
@@ -22,6 +22,32 @@ pub const keywords = [
 	'true',
 	'false',
 ]
+pub const operators = [
+	// comparison
+	'==',
+	'!=',
+	'>=',
+	'<=',
+	'>',
+	'<',
+	'&&',
+	'||',
+	// bitwise
+	'>>',
+	'<<',
+	'&',
+	'^',
+	'|',
+	// math
+	'+',
+	'-',
+	'/',
+	'*',
+	'%',
+	// misc
+	'!',
+	'->',
+]
 
 pub enum TokenKind {
 	@none
@@ -30,6 +56,7 @@ pub enum TokenKind {
 	literal
 	str
 	number
+	operator
 	eof
 }
 
@@ -120,6 +147,7 @@ fn (mut t Tokenizer) next_number(start u8) Token {
 
 pub fn (mut t Tokenizer) tokenize() {
 	mut ch := t.next()
+	mut ch_with_next := '${u8(ch).ascii_str()}${u8(t.peek()).ascii_str()}'
 	for {
 		if ch == -1 {
 			break
@@ -132,6 +160,11 @@ pub fn (mut t Tokenizer) tokenize() {
 			t.tokens << t.next_str(u8(ch))
 		} else if ch == `"` {
 			t.tokens << t.next_str(u8(ch))
+		} else if ch_with_next in operators {
+			t.skip()
+			t.tokens << Token{.operator, ch_with_next, t.line, t.column}
+		} else if u8(ch).ascii_str() in operators {
+			t.tokens << Token{.operator, u8(ch).ascii_str(), t.line, t.column}
 		} else if literals.contains_u8(u8(ch)) {
 			t.tokens << Token{.literal, u8(ch).ascii_str(), t.line, t.column}
 		} else if valid_number_runes.contains_u8(u8(ch)) {
@@ -153,6 +186,7 @@ pub fn (mut t Tokenizer) tokenize() {
 		}
 
 		ch = t.next()
+		ch_with_next = '${u8(ch).ascii_str()}${u8(t.peek()).ascii_str()}'
 		t.column++
 	}
 }

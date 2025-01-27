@@ -10,7 +10,7 @@ end
 let sum = fn nums do
 	let s = 0.0
 	each(nums fn x do
-		s = add(s x)
+		s = s + x
 	end)
 	print('sum: ')
 	println(s)
@@ -44,7 +44,8 @@ let my_range = range(0 10)
 printeach(my_range)
 
 let is_even = fn it do
-	return equals(mod(it 2) 0)
+	let x = it % 2
+	return x == 0
 end
 printeach(filter(range(0 10) is_even))
 

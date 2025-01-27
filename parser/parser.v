@@ -3,6 +3,13 @@ module parser
 import ast
 import tokenizer { Token, TokenKind }
 
+// tokens that we should check for operators after
+const tokens_to_check_for_operators = [
+	TokenKind.id,
+	TokenKind.str,
+	TokenKind.number,
+]
+
 pub struct Parser {
 pub mut:
 	index  int
@@ -80,6 +87,26 @@ fn (p &Parser) check_n(kind TokenKind, value string, n int) bool {
 @[inline]
 fn (p &Parser) check(kind TokenKind, value string) bool {
 	return p.check_n(kind, value, 0)
+}
+
+@[inline]
+fn (p &Parser) check_kind_n(kind TokenKind, n int) bool {
+	return p.peek_n(n).kind == kind
+}
+
+@[inline]
+fn (p &Parser) check_kind(kind TokenKind) bool {
+	return p.check_kind_n(kind, 0)
+}
+
+@[inline]
+fn (p &Parser) check_value_n(value string, n int) bool {
+	return p.peek_n(n).value == value
+}
+
+@[inline]
+fn (p &Parser) check_value(value string) bool {
+	return p.check_value_n(value, 0)
 }
 
 @[direct_array_access; inline]
@@ -244,6 +271,7 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 @[inline]
 pub fn (mut p Parser) parse_single() ?ast.INode {
 	token := p.eat() or { return none }
+	mut node := ?ast.INode(none)
 	match token.kind {
 		.@none {
 			p.throw('parse_single given an empty token: ${token}')
@@ -251,50 +279,97 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		.id {
 			// if the next token is an open parenthesis, we are invoking something
 			if p.check(.literal, '(') {
-				return p.parse_invoke()
+				node = p.parse_invoke()
 			}
 			// if the next token is an equals sign, we are assigning
 			else if p.check(.literal, '=') {
-				return p.parse_assign()
+				node = p.parse_assign()
 			} else {
-				return ast.NodeId{token.value}
+				node = ast.NodeId{token.value}
 			}
 		}
 		.keyword {
 			if token.value == 'let' {
-				return p.parse_let()
+				node = p.parse_let()
 			} else if token.value == 'fn' {
-				return p.parse_fn()
+				node = p.parse_fn()
 			} else if token.value == 'do' {
-				return p.parse_block()
+				node = p.parse_block()
 			} else if token.value == 'return' {
-				return p.parse_return()
+				node = p.parse_return()
 			} else if token.value == 'if' {
-				return p.parse_if()
+				node = p.parse_if()
 			} else if token.value == 'true' {
-				return ast.NodeBool{true}
+				node = ast.NodeBool{true}
 			} else if token.value == 'false' {
-				return ast.NodeBool{false}
+				node = ast.NodeBool{false}
 			}
 		}
 		.literal {
 			if token.value == '[' {
-				return p.parse_list()
+				node = p.parse_list()
 			}
 		}
 		.str {
-			return ast.NodeString{token.value}
+			node = ast.NodeString{token.value}
 		}
 		.number {
-			return ast.NodeNumber{token.value.f64()}
+			node = ast.NodeNumber{token.value.f64()}
+		}
+		.operator {
+			if token.value == '!' {
+				node = ast.OperatorUnaryNot{p.parse_single() or {
+					p.throw('expected expression after not operator')
+				}}
+			}
+			// all other operators are handled below
 		}
 		.eof {
-			return ast.NodeEOF{}
+			node = ast.NodeEOF{}
 		}
 	}
-	p.throw('parse_single given an invalid token: ${token}')
+
+	if node == none {
+		p.throw('parse_single returned a `none` node. token: ${token}')
+	}
+
+	// if the next token is an operator, instead of returning this token, we
+	// will return the operator with this as the `left` value.
+	if token.kind in tokens_to_check_for_operators && p.check_kind(.operator) && !p.check_value('!') {
+		operator := p.eat() or {
+			p.throw('parse_single failed to get an operator that we KNOW exists. If this error occurs then your computer was probably hit with solar rays.')
+		}
+
+		node_not_none := node or {
+			p.throw('parse_single node was none but we previously checked it was not. If this error occurs then your computer was probably hit with solar rays.')
+		}
+
+		mut next_node := p.parse_single() or {
+			p.throw('right side of operator was none. error: ${err}')
+		} as ast.NodeOperator
+
+		next_node_is_greater := next_node.precedence > operator.precedence
+
+		next := if mut next_node is ast.NodeOperator {
+			next_node.left
+		} else {
+			next_node
+		}
+
+		op_node := p.make_operator(operator.value, node_not_none, next)
+
+		if mut next_node is ast.NodeOperator {
+			next_node.left = op_node
+			return next_node
+		}
+
+		return op_node
+	}
+
+	return node
 }
 
+@[inline]
 pub fn parse_list(tokens []Token) []ast.INode {
 	mut p := Parser{
 		tokens: tokens
@@ -312,5 +387,107 @@ pub fn parse_list(tokens []Token) []ast.INode {
 pub fn parse(tokens []Token) ast.AST {
 	return ast.AST{
 		children: parse_list(tokens)
+	}
+}
+
+@[inline]
+fn (p &Parser) make_operator(kind string, left ast.INode, right ast.INode) ast.INode {
+	if kind == '==' {
+		return ast.OperatorEquals{
+			left:  left
+			right: right
+		}
+	} else if kind == '!=' {
+		return ast.OperatorNotEquals{
+			left:  left
+			right: right
+		}
+	} else if kind == '>=' {
+		return ast.OperatorGtEq{
+			left:  left
+			right: right
+		}
+	} else if kind == '<=' {
+		return ast.OperatorLtEq{
+			left:  left
+			right: right
+		}
+	} else if kind == '>' {
+		return ast.OperatorGt{
+			left:  left
+			right: right
+		}
+	} else if kind == '<' {
+		return ast.OperatorLt{
+			left:  left
+			right: right
+		}
+	} else if kind == '&&' {
+		return ast.OperatorAnd{
+			left:  left
+			right: right
+		}
+	} else if kind == '||' {
+		return ast.OperatorOr{
+			left:  left
+			right: right
+		}
+	} else if kind == '>>' {
+		return ast.OperatorRightShift{
+			left:  left
+			right: right
+		}
+	} else if kind == '<<' {
+		return ast.OperatorLeftShift{
+			left:  left
+			right: right
+		}
+	} else if kind == '&' {
+		return ast.OperatorBitwiseAnd{
+			left:  left
+			right: right
+		}
+	} else if kind == '^' {
+		return ast.OperatorBitwiseXor{
+			left:  left
+			right: right
+		}
+	} else if kind == '|' {
+		return ast.OperatorBitwiseOr{
+			left:  left
+			right: right
+		}
+	} else if kind == '+' {
+		return ast.OperatorAdd{
+			left:  left
+			right: right
+		}
+	} else if kind == '-' {
+		return ast.OperatorSub{
+			left:  left
+			right: right
+		}
+	} else if kind == '/' {
+		return ast.OperatorDiv{
+			left:  left
+			right: right
+		}
+	} else if kind == '*' {
+		return ast.OperatorMul{
+			left:  left
+			right: right
+		}
+	} else if kind == '%' {
+		return ast.OperatorMod{
+			left:  left
+			right: right
+		}
+	} else if kind == '->' {
+		return ast.OperatorPipe{
+			left:  left
+			right: right
+		}
+	} else {
+		p.throw('make_operator given invalid operator kind ${kind}, this error should never happen, please report it.')
 	}
 }
