@@ -8,6 +8,7 @@ const tokens_to_check_for_operators = [
 	TokenKind.id,
 	TokenKind.str,
 	TokenKind.number,
+	TokenKind.boolean,
 ]
 
 pub struct Parser {
@@ -299,10 +300,6 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 				node = p.parse_return()
 			} else if token.value == 'if' {
 				node = p.parse_if()
-			} else if token.value == 'true' {
-				node = ast.NodeBool{true}
-			} else if token.value == 'false' {
-				node = ast.NodeBool{false}
 			}
 		}
 		.literal {
@@ -315,6 +312,9 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		}
 		.number {
 			node = ast.NodeNumber{token.value.f64()}
+		}
+		.boolean {
+			node = ast.NodeBool{token.value == 'true'}
 		}
 		.operator {
 			if token.value == '!' {

@@ -19,8 +19,6 @@ pub const keywords = [
 	'else',
 	'let',
 	'return',
-	'true',
-	'false',
 ]
 pub const operators = [
 	// comparison
@@ -58,6 +56,7 @@ pub enum TokenKind {
 	literal
 	str
 	number
+	boolean
 	operator
 	eof
 }
@@ -175,6 +174,8 @@ pub fn (mut t Tokenizer) tokenize() {
 			tok := t.next_id(u8(ch))
 			if tok.value in keywords {
 				t.tokens << Token{.keyword, tok.value, t.line, t.column}
+			} else if tok.value == 'true' || tok.value == 'false' {
+				t.tokens << Token{.boolean, tok.value, t.line, t.column}
 			} else {
 				t.tokens << tok
 			}
