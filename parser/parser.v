@@ -354,7 +354,9 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 
 		next_node_has_priority := if mut next_node is ast.NodeOperator {
 			precedence_of_node(next_node) > precedence_of_token(operator)
-		} else { false }
+		} else {
+			false
+		}
 
 		next := if next_node_has_priority && mut next_node is ast.NodeOperator {
 			next_node.left
@@ -363,8 +365,8 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		}
 
 		op_node := ast.NodeOperator{
-			kind: get_operator_kind_from_str(operator.value),
-			left: node_not_none,
+			kind:  get_operator_kind_from_str(operator.value)
+			left:  node_not_none
 			right: next
 		}
 
@@ -434,28 +436,28 @@ pub fn get_operator_kind_from_str(value string) ast.Operator {
 // same as
 // https://en.cppreference.com/w/c/language/operator_precedence
 const operator_precedence = {
-	ast.Operator.dot: 0,
-	.pipe: 1,
-	.unary_not: 2,
-	.bit_not: 2,
-	.div: 3,
-	.mul: 3,
-	.mod: 3,
-	.add: 4,
-	.sub: 4,
-	.shift_right: 5,
-	.shift_left: 5,
-	.gteq: 6,
-	.lteq: 6,
-	.gt: 6,
-	.lt: 6,
-	.eq: 7,
-	.neq: 7,
-	.bit_and: 8,
-	.bit_xor: 9,
-	.bit_or: 10,
-	.and: 11,
-	.or: 12,
+	ast.Operator.dot: 0
+	.pipe:            1
+	.unary_not:       2
+	.bit_not:         2
+	.div:             3
+	.mul:             3
+	.mod:             3
+	.add:             4
+	.sub:             4
+	.shift_right:     5
+	.shift_left:      5
+	.gteq:            6
+	.lteq:            6
+	.gt:              6
+	.lt:              6
+	.eq:              7
+	.neq:             7
+	.bit_and:         8
+	.bit_xor:         9
+	.bit_or:          10
+	.and:             11
+	.or:              12
 }
 
 @[inline]
@@ -464,6 +466,6 @@ pub fn precedence_of_node(node &ast.NodeOperator) int {
 }
 
 @[inline]
-pub fn precedence_of_token(token &tokenizer.Token) int {
+pub fn precedence_of_token(token &Token) int {
 	return operator_precedence[get_operator_kind_from_str(token.value)]
 }

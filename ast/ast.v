@@ -14,7 +14,8 @@ pub:
 pub struct NodeOperator implements INode {
 pub:
 	kind Operator
-pub mut: // these are mutable so that we can modify existing nodes to account for precedence
+pub mut:
+	// these are mutable so that we can modify existing nodes to account for precedence
 	left  INode
 	right INode
 }

@@ -121,40 +121,16 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		ast.NodeUnaryOperator {
 			match node.kind {
 				// .bitwise_not { return Value(f64(int(s.eval(node.left) as f64) ~ int(s.eval(node.right) as f64))) }
-				.unary_not { return Value(!(s.eval(node.value) as bool)) }
+				.unary_not {
+					return Value(!(s.eval(node.value) as bool))
+				}
 				else {
 					s.throw('eval() given a NodeUnaryOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 				}
 			}
 		}
 		ast.NodeOperator {
-			match node.kind {
-				// vfmt off
-				.eq { return Value(s.eval(node.left) == s.eval(node.right)) }
-				.neq { return Value(s.eval(node.left) != s.eval(node.right)) }
-				.gteq { return Value((s.eval(node.left) as f64) >= (s.eval(node.right) as f64)) }
-				.lteq { return Value((s.eval(node.left) as f64) <= (s.eval(node.right) as f64)) }
-				.gt { return Value((s.eval(node.left) as f64) > (s.eval(node.right) as f64)) }
-				.lt { return Value((s.eval(node.left) as f64) < (s.eval(node.right) as f64)) }
-				.and { return Value((s.eval(node.left) as bool) && (s.eval(node.right) as bool)) }
-				.or { return Value((s.eval(node.left) as bool) || (s.eval(node.right) as bool)) }
-				.shift_right { return Value(f64(int(s.eval(node.left) as f64) >> int(s.eval(node.right) as f64))) }
-				.shift_left { return Value(f64(int(s.eval(node.left) as f64) << int(s.eval(node.right) as f64))) }
-				.bit_and { return Value(f64(int(s.eval(node.left) as f64) & int(s.eval(node.right) as f64))) }
-				.bit_xor { return Value(f64(int(s.eval(node.left) as f64) ^ int(s.eval(node.right) as f64))) }
-				.bit_or { return Value(f64(int(s.eval(node.left) as f64) | int(s.eval(node.right) as f64))) }
-				.add { return Value((s.eval(node.left) as f64) + (s.eval(node.right) as f64)) }
-				.sub { return Value((s.eval(node.left) as f64) - (s.eval(node.right) as f64)) }
-				.div { return Value((s.eval(node.left) as f64) / (s.eval(node.right) as f64)) }
-				.mul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
-				.mod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
-				.pipe { }
-				.dot { }
-				// vfmt on
-				else {
-					s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
-				}
-			}
+			return s.eval_operator(node)
 		}
 		ast.NodeRoot {
 			for child in node.children {
@@ -206,10 +182,40 @@ pub fn (mut s Scope) eval_function_list_args(function Value, arg_list []Value) V
 	}
 }
 
-pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
-	variable := s.get(func) or {
-		s.throw('cannot invoke non-existent function `${func}`')
+@[inline]
+fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
+	match node.kind {
+		// vfmt off
+		.eq { return Value(s.eval(node.left) == s.eval(node.right)) }
+		.neq { return Value(s.eval(node.left) != s.eval(node.right)) }
+		.gteq { return Value((s.eval(node.left) as f64) >= (s.eval(node.right) as f64)) }
+		.lteq { return Value((s.eval(node.left) as f64) <= (s.eval(node.right) as f64)) }
+		.gt { return Value((s.eval(node.left) as f64) > (s.eval(node.right) as f64)) }
+		.lt { return Value((s.eval(node.left) as f64) < (s.eval(node.right) as f64)) }
+		.and { return Value((s.eval(node.left) as bool) && (s.eval(node.right) as bool)) }
+		.or { return Value((s.eval(node.left) as bool) || (s.eval(node.right) as bool)) }
+		.shift_right { return Value(f64(int(s.eval(node.left) as f64) >> int(s.eval(node.right) as f64))) }
+		.shift_left { return Value(f64(int(s.eval(node.left) as f64) << int(s.eval(node.right) as f64))) }
+		.bit_and { return Value(f64(int(s.eval(node.left) as f64) & int(s.eval(node.right) as f64))) }
+		.bit_xor { return Value(f64(int(s.eval(node.left) as f64) ^ int(s.eval(node.right) as f64))) }
+		.bit_or { return Value(f64(int(s.eval(node.left) as f64) | int(s.eval(node.right) as f64))) }
+		.add { return Value((s.eval(node.left) as f64) + (s.eval(node.right) as f64)) }
+		.sub { return Value((s.eval(node.left) as f64) - (s.eval(node.right) as f64)) }
+		.div { return Value((s.eval(node.left) as f64) / (s.eval(node.right) as f64)) }
+		.mul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
+		.mod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
+		.pipe { }
+		.dot { }
+		// vfmt on
+		else {
+			s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
+		}
 	}
+	s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
+}
+
+pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
+	variable := s.get(func) or { s.throw('cannot invoke non-existent function `${func}`') }
 	if variable is ValueFunction {
 		return variable.run(mut s, args)
 	} else if variable is ValueNativeFunction {
