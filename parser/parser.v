@@ -177,7 +177,7 @@ fn (mut p Parser) parse_invoke() ast.NodeInvoke {
 	p.expect_kind_n(.id, -1)
 	name := p.peek_n(-1).value
 	args := p.tokens_until_closing(.literal, '(', .literal, ')', true)
-	return ast.NodeInvoke{name, parse_list(args)}
+	return ast.NodeInvoke{name, parse_comma_list(args, false)}
 }
 
 @[inline]
@@ -191,9 +191,30 @@ fn (mut p Parser) parse_block() ast.NodeBlock {
 fn (mut p Parser) parse_fn() ast.NodeFn {
 	p.expect_n(.keyword, 'fn', -1)
 	args := p.tokens_until(.keyword, 'do')
+	// check if the last element is not an identifier. this would be the case if a trailing comma exists
+	if args.len > 0 && args[args.len - 1].kind != .id {
+		p.throw('expected identifier but got `${args[args.len - 1].value}`')
+	}
+	mut parsed_args := []string{}
+	for i := 0; i < args.len; i += 2 {
+		if args[i].kind != .id {
+			p.throw('expected identifier but got `${args[i].value}`')
+		}
+
+		parsed_args << args[i].value
+
+		// expect a comma, unless this is the last argument
+		if i != args.len - 1 {
+			expected_comma := args[i + 1]
+			if expected_comma.kind != .literal || expected_comma.value != ',' {
+				p.throw('expected a comma (,) but got ${args[i].value}')
+			}
+		}
+	}
+	// skip commas in the arguments
 	block := p.parse_block()
 	return ast.NodeFn{
-		args: args.map(|it| it.value)
+		args: parsed_args
 		code: block
 	}
 }
@@ -239,7 +260,7 @@ fn (mut p Parser) parse_list() ast.NodeList {
 	p.expect_n(.literal, '[', -1)
 	tokens := p.tokens_until_closing(.literal, '[', .literal, ']', false)
 	return ast.NodeList{
-		values: parse_list(tokens)
+		values: parse_comma_list(tokens, true)
 	}
 }
 
@@ -281,7 +302,6 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 pub fn (mut p Parser) parse_single() ?ast.INode {
 	token := p.eat() or { return none }
 	mut node := ?ast.INode(none)
-	println('parsing: ${token.kind}=${token.value}')
 	match token.kind {
 		.@none {
 			p.throw('parse_single given an empty token: ${token}')
@@ -349,8 +369,6 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 	// if the next token is an operator, instead of returning this token, we
 	// will return the operator with this as the `left` value.
 	if token.kind in tokens_to_check_for_operators && p.check_kind(.operator) && !p.check_value('!') {
-		println('parsing operator: ${token.kind}=${token.value}')
-
 		operator := p.eat() or {
 			p.throw('parse_single failed to get an operator that we KNOW exists. If this error occurs then your computer was probably hit with solar rays.')
 		}
@@ -358,8 +376,6 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		node_not_none := node or {
 			p.throw('parse_single node was none but we previously checked it was not. If this error occurs then your computer was probably hit with solar rays.')
 		}
-
-		println('node: ${node_not_none}')
 
 		mut next_node := p.parse_single() or {
 			p.throw('right side of operator was none. error: ${err}')
@@ -376,7 +392,6 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		}
 
 		if next_node_has_priority && mut next_node is ast.NodeOperator {
-			println('next_node.left: ${next_node.left}')
 			next_node.left = ast.NodeOperator{
 				kind:  get_operator_kind_from_str(operator.value)
 				left:  node_not_none
@@ -404,6 +419,29 @@ pub fn parse_list(tokens []Token) []ast.INode {
 
 	for {
 		nodes << p.parse_single() or { break }
+	}
+
+	return nodes
+}
+
+@[inline]
+pub fn parse_comma_list(tokens []Token, allow_trailing_comma bool) []ast.INode {
+	mut p := Parser{
+		tokens: tokens
+	}
+	mut nodes := []ast.INode{}
+
+	for {
+		nodes << p.parse_single() or { break }
+		// if this is the last node, we do not need a comma
+		if p.index < p.tokens.len {
+			p.expect(.literal, ',')
+			p.skip()
+		}
+	}
+
+	if !allow_trailing_comma && p.index < p.tokens.len && p.check(.literal, ',') {
+		p.throw('unexpected comma (,)')
 	}
 
 	return nodes

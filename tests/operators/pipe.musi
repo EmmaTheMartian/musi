@@ -7,7 +7,8 @@ print("2: ")
 pass() -> print()
 println("")
 
-let return_it = fn it ignored_param do return it end
+# ignored_param is here for debugging generated ASTs. It gives me an index to look at to ensure the parser ordered the operators right.
+let return_it = fn it, ignored_param do return it end
 print("3: ")
 pass() -> return_it(0) -> print()
 println("")

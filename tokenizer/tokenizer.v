@@ -8,7 +8,7 @@ pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 pub const numbers = '1234567890'
 pub const valid_number_runes = '.' + numbers // underscores are handled manually in parse_number
 pub const valid_id = valid_id_start + numbers
-pub const literals = ':;=()[]{}\\'
+pub const literals = ':;=()[]{},\\'
 pub const whitespace = ' \r\n\t\f'
 pub const keywords = [
 	'fn',

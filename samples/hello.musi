@@ -1,7 +1,7 @@
 let void = fn do end
 
-let greet = fn greeting user do
-	each([greeting ', ' user '!'] fn it do
+let greet = fn greeting, user do
+	each([greeting, ', ', user, '!'], fn it do
 		print(it)
 	end)
 	println('')
@@ -9,26 +9,26 @@ end
 
 let sum = fn nums do
 	let s = 0.0
-	each(nums fn x do
+	each(nums, fn x do
 		s = s + x
 	end)
 	print('sum: ')
 	println(s)
 end
 
-greet('Hello' 'World')
+greet('Hello', 'World')
 
 sum([
-	10
-	0.5
-	15.5
-	14
-	2
+	10,
+	0.5,
+	15.5,
+	14,
+	2,
 ])
 
 let printeach = fn list do
 	print('[')
-	each(list fn it do
+	each(list, fn it do
 		print(it)
 		print(', ')
 	end)
@@ -40,13 +40,13 @@ let test = fn do
 end
 println(test())
 
-let my_range = range(0 10)
+let my_range = range(0, 10)
 printeach(my_range)
 
 let is_even = fn it do
 	return it % 2 == 0
 end
-printeach(filter(range(0 10) is_even))
+printeach(filter(range(0, 10), is_even))
 
 let something = fn do
 	println('something')
@@ -70,12 +70,12 @@ end else do
 end
 
 let greet_user = fn user do
-	greet("Welcome" user)
+	greet("Welcome", user)
 end
 
 "Gandalf" -> greet_user()
 
 println('range using pipes:')
-range(0 10) -> filter(is_even) -> each(fn it do
+range(0, 10) -> filter(is_even) -> each(fn it do
 	println(it)
 end)
