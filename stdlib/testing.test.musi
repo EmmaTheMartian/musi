@@ -1,0 +1,3 @@
+let testing = import("testing.musi")
+
+testing.test('some test', true, true)

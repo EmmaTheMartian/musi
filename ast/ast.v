@@ -64,7 +64,7 @@ pub mut:
 
 pub struct NodeInvoke implements INode {
 pub:
-	func string
+	func INode
 	args []INode
 }
 
@@ -114,6 +114,11 @@ pub:
 pub struct NodeList implements INode {
 pub:
 	values []INode
+}
+
+pub struct NodeTable implements INode {
+pub:
+	values map[string]INode
 }
 
 pub struct NodeReturn implements INode {
