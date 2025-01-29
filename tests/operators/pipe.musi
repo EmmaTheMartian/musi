@@ -1,0 +1,17 @@
+print("1: ")
+"pass" -> print()
+println("")
+
+let pass = fn do return "pass" end
+print("2: ")
+pass() -> print()
+println("")
+
+let return_it = fn it ignored_param do return it end
+print("3: ")
+pass() -> return_it(0) -> print()
+println("")
+
+print("4: ")
+pass() -> return_it(0) -> return_it(1) -> return_it(2) -> return_it(3) -> print()
+println("")

@@ -281,6 +281,7 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 pub fn (mut p Parser) parse_single() ?ast.INode {
 	token := p.eat() or { return none }
 	mut node := ?ast.INode(none)
+	println('parsing: ${token.kind}=${token.value}')
 	match token.kind {
 		.@none {
 			p.throw('parse_single given an empty token: ${token}')
@@ -348,6 +349,8 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 	// if the next token is an operator, instead of returning this token, we
 	// will return the operator with this as the `left` value.
 	if token.kind in tokens_to_check_for_operators && p.check_kind(.operator) && !p.check_value('!') {
+		println('parsing operator: ${token.kind}=${token.value}')
+
 		operator := p.eat() or {
 			p.throw('parse_single failed to get an operator that we KNOW exists. If this error occurs then your computer was probably hit with solar rays.')
 		}
@@ -356,38 +359,37 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 			p.throw('parse_single node was none but we previously checked it was not. If this error occurs then your computer was probably hit with solar rays.')
 		}
 
+		println('node: ${node_not_none}')
+
 		mut next_node := p.parse_single() or {
 			p.throw('right side of operator was none. error: ${err}')
 		}
 
 		next_node_has_priority := if mut next_node is ast.NodeOperator {
-			if next_node.kind in operators_with_left_priority {
-				true
-			} else {
+			// if next_node.kind in operators_with_left_priority {
+			// 	true
+			// } else {
 				precedence_of_node(next_node) > precedence_of_token(operator)
-			}
+			// }
 		} else {
 			false
 		}
 
-		next := if next_node_has_priority && mut next_node is ast.NodeOperator {
-			next_node.left
-		} else {
-			ast.INode(next_node)
-		}
-
-		op_node := ast.NodeOperator{
-			kind:  get_operator_kind_from_str(operator.value)
-			left:  node_not_none
-			right: next
-		}
-
 		if next_node_has_priority && mut next_node is ast.NodeOperator {
-			next_node.left = op_node
+			println('next_node.left: ${next_node.left}')
+			next_node.left = ast.NodeOperator{
+				kind:  get_operator_kind_from_str(operator.value)
+				left:  node_not_none
+				right: next_node.left
+			}
 			return next_node
+		} else {
+			return ast.NodeOperator{
+				kind:  get_operator_kind_from_str(operator.value)
+				left:  node_not_none
+				right: next_node
+			}
 		}
-
-		return op_node
 	}
 
 	return node
