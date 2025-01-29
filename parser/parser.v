@@ -11,6 +11,14 @@ const tokens_to_check_for_operators = [
 	TokenKind.boolean,
 ]
 
+// operators where nested operators should be given to the leftmost operator instead of the rightmost.
+// nodes excluded from this list resolve as: 1 + 2 + 3 resolves to add(1, add(2, 3))
+// nodes in this list resolve as: 1 + 2 + 3 resolves to add(add(1, 2), 3)
+const operators_with_left_priority = [
+	ast.Operator.pipe,
+	.dot
+]
+
 pub struct Parser {
 pub mut:
 	index  int
@@ -353,7 +361,11 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		}
 
 		next_node_has_priority := if mut next_node is ast.NodeOperator {
-			precedence_of_node(next_node) > precedence_of_token(operator)
+			if next_node.kind in operators_with_left_priority {
+				true
+			} else {
+				precedence_of_node(next_node) > precedence_of_token(operator)
+			}
 		} else {
 			false
 		}

@@ -68,3 +68,14 @@ if false do
 end else do
 	println('false is false!')
 end
+
+let greet_user = fn user do
+	greet("Welcome" user)
+end
+
+"Gandalf" -> greet_user()
+
+println('range using pipes:')
+range(0 10) -> filter(is_even) -> each(fn it do
+	println(it)
+end)

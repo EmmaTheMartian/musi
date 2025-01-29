@@ -204,7 +204,38 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 		.div { return Value((s.eval(node.left) as f64) / (s.eval(node.right) as f64)) }
 		.mul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
 		.mod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
-		.pipe { }
+		.pipe {
+			to_pipe := s.eval(node.left)
+
+			if node.right !is ast.NodeInvoke {
+				s.throw('cannot pipe into a non-function')
+			}
+			func := node.right as ast.NodeInvoke
+			variable := s.get(func.func) or { s.throw('no such function `${func.func}`') }
+
+			mut args := map[string]Value{}
+			if variable is ValueFunction {
+				if func.args.len + 1 != variable.args.len {
+					s.throw('${func.args.len + 1} (+1 from pipe) arguments provided but ${variable.args.len} are needed')
+				}
+				args[variable.args[0]] = to_pipe
+				for index, arg in variable.args[1..] {
+					args[arg] = s.eval(func.args[index])
+				}
+			} else if variable is ValueNativeFunction {
+				if func.args.len + 1 != variable.args.len {
+					s.throw('${func.args.len} arguments provided but ${variable.args.len} are needed. provided: ${func.args} (+1 from pipe)')
+				}
+				args[variable.args[0]] = to_pipe
+				for index, arg in variable.args[1..] {
+					args[arg] = s.eval(func.args[index])
+				}
+			} else {
+				s.throw('attempted to invoke non-function: ${func.func}')
+			}
+
+			return s.invoke(func.func, args)
+		}
 		.dot { }
 		// vfmt on
 		else {
