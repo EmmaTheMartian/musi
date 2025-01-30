@@ -15,6 +15,7 @@ pub:
 	args   []string
 }
 
+// run runs the native function using `args` in subscope of the provided scope, then returns the function's returned value.
 pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value) Value {
 	mut scope := s.make_child(func.tracer)
 	// add args to scope
@@ -31,6 +32,7 @@ pub:
 	args   []string
 }
 
+// run runs the function using `args` in subscope of the provided scope, then returns the function's returned value.
 pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value) Value {
 	mut scope := s.make_child(func.tracer)
 	// add args to scope
@@ -55,11 +57,14 @@ pub const null_value = Value(ValueNull{})
 pub const true_value = Value(true)
 pub const false_value = Value(true)
 
+// set sets a value in the table to the given value.
 @[inline]
 pub fn (mut v map[string]Value) set(name string, value Value) {
 	v[name] = value
 }
 
+// get returns the value in the table corresponding to the given name.
+// an error is thrown in the scope if the table does not contain a key with the provided name.
 @[inline]
 pub fn (mut v map[string]Value) get(name string, scope &Scope) Value {
 	return v[name] or { scope.throw('failed to index table with key `${name}`') }

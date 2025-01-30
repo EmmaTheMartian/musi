@@ -2,6 +2,7 @@ module interpreter
 
 import strings
 
+// apply_builtins adds all builtin functions to the given scope.
 pub fn apply_builtins(mut scope Scope) {
 	// modules
 

@@ -11,6 +11,7 @@ pub mut:
 	allow_imports bool = true
 }
 
+// Interpreter represents an interpretation context, containing the root scope, import information, and interpreter options.
 @[heap; noinit]
 pub struct Interpreter {
 pub mut:
@@ -20,6 +21,9 @@ pub mut:
 	options          InterpreterOptions
 }
 
+// Interpreter.new creates a new interpreter and returns a pointer to it.
+// `root_path` should be the **directory** of the file executed (for example, if executing `./samples/test.musi`, `root_path` would be `./samples/`)
+// `options` contain options for the interpreter, controlling things such as the stdlib and imports.
 @[inline]
 pub fn Interpreter.new(root_path string, options InterpreterOptions) &Interpreter {
 	mut i := &Interpreter{
@@ -33,16 +37,20 @@ pub fn Interpreter.new(root_path string, options InterpreterOptions) &Interprete
 	return i
 }
 
+// new_scope creates a new child scope under the root scope with the given tracer, then returns it.
 @[inline]
 pub fn (mut i Interpreter) new_scope(tracer string) Scope {
 	return i.root_scope.make_child(tracer)
 }
 
+// run evaluates the provided AST in the interpreter's root scope and returns the scope's returned value.
 @[inline]
 pub fn (mut i Interpreter) run(tree &AST) Value {
 	return i.root_scope.eval(&NodeRoot(tree))
 }
 
+// run_isolated evaluates the provided AST in the a fresh scope complete detached from the interpreter's root scope and returns the scope's returned value.
+// this is used for importing files.
 @[inline]
 pub fn (mut i Interpreter) run_isolated(tree &AST, tracer string) Value {
 	mut scope := Scope.new(i, tracer)
@@ -52,6 +60,8 @@ pub fn (mut i Interpreter) run_isolated(tree &AST, tracer string) Value {
 	return scope.eval(&NodeRoot(tree))
 }
 
+// import evaluates the given file (`${Interpreter.import_root_path}/${module_path}`) if it has not been previously cached, caches it, then returns the imported scope's value.
+// if it has been cached, the cached value is returned.
 @[inline]
 pub fn (mut i Interpreter) import(mut scope Scope, module_path string) Value {
 	if !i.options.allow_imports {
@@ -85,8 +95,7 @@ pub fn (mut i Interpreter) run_file(path string) Value {
 	return i.run(ast_)
 }
 
-// run_file_isolated is like run_file except executes the file in an isolated
-// scope.
+// run_file_isolated is like run_file except executes the file in a scope detached from the interpreter's root scope.
 @[inline]
 pub fn (mut i Interpreter) run_file_isolated(path string) Value {
 	if !os.exists(path) {

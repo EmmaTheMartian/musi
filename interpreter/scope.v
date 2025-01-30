@@ -2,6 +2,7 @@ module interpreter
 
 import ast { INode }
 
+// Scope represents a scope, containing information needed for executing code under an Interpreter.
 @[heap; noinit]
 pub struct Scope {
 pub mut:
@@ -12,6 +13,8 @@ pub mut:
 	returned    ?Value
 }
 
+// throw throws an error with the given message.
+// when not in production environments, a V `panic` is also invoked to give a V stacktrace.
 @[noreturn]
 pub fn (s &Scope) throw(message string) {
 	eprintln('---')
@@ -25,6 +28,7 @@ pub fn (s &Scope) throw(message string) {
 	exit(1)
 }
 
+// get_trace follows all scope parents and gets their tracers, returning each as a list.
 pub fn (s &Scope) get_trace() []string {
 	mut trace := []string{}
 	trace << s.tracer
@@ -34,6 +38,7 @@ pub fn (s &Scope) get_trace() []string {
 	return trace
 }
 
+// eval evaluates the given node under the scope and returns the evaluated value.
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
 		ast.NodeInvoke {
@@ -132,6 +137,8 @@ pub fn (mut s Scope) eval(node &INode) Value {
 	s.throw('eval() returned no value. this should never happen, please report it.')
 }
 
+// eval_function evaluates the provided function value with the provided args, then returns the function's returned value.
+// see also: invoke
 pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value {
 	if function is ValueFunction {
 		return function.run(mut s, args)
@@ -142,30 +149,68 @@ pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value 
 	}
 }
 
-pub fn (mut s Scope) eval_function_list_args(function Value, arg_list []Value) Value {
-	if function is ValueFunction {
-		mut args := map[string]Value{}
-		if arg_list.len != function.args.len {
-			s.throw('${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
-		}
-		for index, arg in function.args {
-			args[arg] = arg_list[index]
-		}
-		return function.run(mut s, args)
-	} else if function is ValueNativeFunction {
-		mut args := map[string]Value{}
-		if arg_list.len != function.args.len {
-			s.throw('${args.len} arguments provided but ${function.args.len} are needed. provided: ${arg_list}')
-		}
-		for index, arg in function.args {
-			args[arg] = arg_list[index]
-		}
-		return function.run(mut s, args)
+// invoke invokes the function with the provided name using the provided args, then returns the function's returned value.
+// see also: eval_function
+@[inline]
+pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
+	variable := s.get(func) or { s.throw('cannot invoke non-existent function `${func}`') }
+	if variable is ValueFunction {
+		return variable.run(mut s, args)
+	} else if variable is ValueNativeFunction {
+		return variable.run(mut s, args)
 	} else {
-		s.throw('attempted to invoke non-function: ${function}')
+		s.throw('attempted to invoke non-function: ${func}')
 	}
 }
 
+// invoke_eval invokes the provided function using the provided args, then returns the function's returned value.
+// see also: invoke, eval_function, eval_function_args
+@[inline]
+fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
+	variable := s.eval(func)
+	if variable is ValueFunction {
+		return variable.run(mut s, args)
+	} else if variable is ValueNativeFunction {
+		return variable.run(mut s, args)
+	} else {
+		s.throw('attempted to invoke non-function: ${func}')
+	}
+}
+
+// eval_function_args evaluates each argument provided in the `ast.NodeInvoke` and returns them, but does not invoke the function.
+@[inline]
+fn (mut s Scope) eval_function_args(func Value, node &ast.NodeInvoke) map[string]Value {
+	mut args := map[string]Value{}
+	if func is ValueFunction {
+		if node.args.len != func.args.len {
+			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed')
+		}
+		for index, arg in func.args {
+			args[arg] = s.eval(node.args[index])
+		}
+	} else if func is ValueNativeFunction {
+		if node.args.len != func.args.len {
+			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed. provided: ${node.args}')
+		}
+		for index, arg in func.args {
+			args[arg] = s.eval(node.args[index])
+		}
+	} else {
+		s.throw('attempted to eval arguments for non-function: ${func}')
+	}
+
+	return args
+}
+
+// invoke_node invokes the given `ast.NodeInvoke`, then returns the function's returned value.
+@[inline]
+fn (mut s Scope) invoke_node(node &ast.NodeInvoke) Value {
+	variable := s.eval(node.func)
+	args := s.eval_function_args(variable, node)
+	return s.invoke_eval(node.func, args)
+}
+
+// eval_operator evaluates and returns the given `ast.NodeOperator`.
 @[inline]
 fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 	match node.kind {
@@ -212,7 +257,7 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 	s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 }
 
-// gets the last value in a series of dots
+// eval_dots evaluates a series of nested dot operators, invoking the last one if it is an `ast.NodeInvoke`.
 @[inline]
 fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
 	left := s.eval(node.left)
@@ -235,7 +280,7 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
 				s.throw('cannot get function `${node.right.func}` on right side of dot operator (.)')
 			}
 			args := s.eval_function_args(variable, node.right)
-			return s.invoke_value(variable, args)
+			return s.eval_function(variable, args)
 		}
 		s.throw('cannot use dot operator (.) on object `${left}`')
 	} else {
@@ -249,6 +294,7 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
 	}
 }
 
+// resolve_dots gets a list of each identifier/string in a series of dot operators.
 @[inline]
 fn (mut s Scope) resolve_dots(node &ast.NodeOperator) []string {
 	mut dots := []string{}
@@ -273,6 +319,8 @@ fn (mut s Scope) resolve_dots(node &ast.NodeOperator) []string {
 	return dots
 }
 
+// set_nested follows the list of identifiers and sets the last one to the given value.
+// see resolve_dots for an example usage.
 @[inline]
 pub fn (mut s Scope) set_nested(dots []string, value Value) {
 	mut table := unsafe { &s.variables }
@@ -284,6 +332,7 @@ pub fn (mut s Scope) set_nested(dots []string, value Value) {
 	}
 }
 
+// pipe pipes the given value (`to_pipe`) into `pipe_into`, invoking it with `to_pipe` as the first argument.
 @[inline]
 fn (mut s Scope) pipe(to_pipe Value, pipe_into &INode) Value {
 	if pipe_into is ast.NodeOperator && pipe_into.kind == .pipe {
@@ -321,86 +370,27 @@ fn (mut s Scope) pipe(to_pipe Value, pipe_into &INode) Value {
 	return s.invoke_eval(func.func, args)
 }
 
-pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
-	variable := s.get(func) or { s.throw('cannot invoke non-existent function `${func}`') }
-	if variable is ValueFunction {
-		return variable.run(mut s, args)
-	} else if variable is ValueNativeFunction {
-		return variable.run(mut s, args)
-	} else {
-		s.throw('attempted to invoke non-function: ${func}')
-	}
-}
-
-@[inline]
-pub fn (mut s Scope) invoke_value(func Value, args map[string]Value) Value {
-	if func is ValueFunction {
-		return func.run(mut s, args)
-	} else if func is ValueNativeFunction {
-		return func.run(mut s, args)
-	} else {
-		s.throw('attempted to invoke non-function: ${func}')
-	}
-}
-
-@[inline]
-fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
-	variable := s.eval(func)
-	if variable is ValueFunction {
-		return variable.run(mut s, args)
-	} else if variable is ValueNativeFunction {
-		return variable.run(mut s, args)
-	} else {
-		s.throw('attempted to invoke non-function: ${func}')
-	}
-}
-
-@[inline]
-fn (mut s Scope) eval_function_args(func Value, node &ast.NodeInvoke) map[string]Value {
-	mut args := map[string]Value{}
-	if func is ValueFunction {
-		if node.args.len != func.args.len {
-			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed')
-		}
-		for index, arg in func.args {
-			args[arg] = s.eval(node.args[index])
-		}
-	} else if func is ValueNativeFunction {
-		if node.args.len != func.args.len {
-			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed. provided: ${node.args}')
-		}
-		for index, arg in func.args {
-			args[arg] = s.eval(node.args[index])
-		}
-	} else {
-		s.throw('attempted to eval arguments for non-function: ${func}')
-	}
-
-	return args
-}
-
-@[inline]
-fn (mut s Scope) invoke_node(node &ast.NodeInvoke) Value {
-	variable := s.eval(node.func)
-	args := s.eval_function_args(variable, node)
-	return s.invoke_eval(node.func, args)
-}
-
+// import imports the given module (`mod`), returning it.
 @[inline]
 pub fn (mut s Scope) import(mod string) Value {
 	return s.interpreter.import(mut s, mod)
 }
 
+// has_own returns true if the given variable exists in this scope (disregarding parent scopes).
+// see also: has
 @[inline]
 pub fn (s &Scope) has_own(variable string) bool {
 	return variable in s.variables
 }
 
+// has_own returns true if the given variable exists in this scope OR in parent scopes.
+// see also: has_own
 @[inline]
 pub fn (s &Scope) has(variable string) bool {
 	return variable in s.variables || (s.parent != unsafe { nil } && s.parent.has(variable))
 }
 
+// scope_of gets a pointer to the first scope containing the given variable.
 @[inline]
 pub fn (s &Scope) scope_of(variable string) ?&Scope {
 	if s.has_own(variable) {
@@ -412,6 +402,8 @@ pub fn (s &Scope) scope_of(variable string) ?&Scope {
 	}
 }
 
+// get gets the value with the provided variable name from this scope OR from parent scopes.
+// see also: get_own
 @[inline]
 pub fn (s &Scope) get(variable string) ?Value {
 	if variable in s.variables {
@@ -425,6 +417,8 @@ pub fn (s &Scope) get(variable string) ?Value {
 	}
 }
 
+// get_own gets the value with the provided variable name from this scope (disregarding parent scopes).
+// see also: get
 @[inline]
 pub fn (s &Scope) get_own(variable string) ?Value {
 	if variable in s.variables {
@@ -436,6 +430,7 @@ pub fn (s &Scope) get_own(variable string) ?Value {
 	}
 }
 
+// new creates a new variable in the current scope, throws an error if the variable already exists in the current scope.
 @[inline]
 pub fn (mut s Scope) new(variable string, value Value) {
 	// we use has_own instead of has so that people can make variables with the same name in child scopes
@@ -446,6 +441,7 @@ pub fn (mut s Scope) new(variable string, value Value) {
 	}
 }
 
+// set sets the value of an existing variable in this scope or in a parent scope.
 @[inline]
 pub fn (mut s Scope) set(variable string, value Value) {
 	mut scope := s.scope_of(variable) or {
@@ -454,6 +450,7 @@ pub fn (mut s Scope) set(variable string, value Value) {
 	scope.variables[variable] = value
 }
 
+// make_child makes a child scope with the given tracer, then returns it.
 @[inline]
 pub fn (s &Scope) make_child(tracer string) Scope {
 	child := Scope{
@@ -464,6 +461,7 @@ pub fn (s &Scope) make_child(tracer string) Scope {
 	return child
 }
 
+// Scope.new creates a new scope for the given interpreter, then returns it.
 @[inline]
 pub fn Scope.new(i &Interpreter, tracer string) Scope {
 	return Scope{

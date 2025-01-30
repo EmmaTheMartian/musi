@@ -11,12 +11,41 @@ const operators_with_left_priority = [
 	ast.Operator.dot,
 ]
 
+// same as
+// https://en.cppreference.com/w/c/language/operator_precedence
+const operator_precedence = {
+	ast.Operator.dot: 0
+	.pipe:            1
+	.unary_not:       2
+	.bit_not:         2
+	.div:             3
+	.mul:             3
+	.mod:             3
+	.add:             4
+	.sub:             4
+	.shift_right:     5
+	.shift_left:      5
+	.gteq:            6
+	.lteq:            6
+	.gt:              6
+	.lt:              6
+	.eq:              7
+	.neq:             7
+	.bit_and:         8
+	.bit_xor:         9
+	.bit_or:          10
+	.and:             11
+	.or:              12
+	.assign:          14
+}
+
 pub struct Parser {
 pub mut:
 	index  int
 	tokens []Token
 }
 
+// throw throws a tokenizer error and shows the line and column (or token index, if not possible) where the error occurred.
 @[noreturn]
 pub fn (p &Parser) throw(msg string) {
 	if p.index >= p.tokens.len {
@@ -25,7 +54,7 @@ pub fn (p &Parser) throw(msg string) {
 	panic('musi: parser @ ${p.peek().line}:${p.peek().column}: ${msg}')
 }
 
-// eat gets the next token from the parser. nom
+// eat gets the next token from the parser and increments the parser's index. nom
 @[direct_array_access; inline]
 fn (mut p Parser) eat() ?Token {
 	if p.index >= p.tokens.len {
@@ -36,21 +65,25 @@ fn (mut p Parser) eat() ?Token {
 	return s
 }
 
+// skip increments the parser's index without returning anything.
 @[inline]
 fn (mut p Parser) skip() {
 	p.index++
 }
 
+// peek returns the current token.
 @[direct_array_access; inline]
 fn (p &Parser) peek() Token {
 	return p.tokens[p.index]
 }
 
+// peek_n returns the token offset by `n` from the current index.
 @[direct_array_access; inline]
 fn (p &Parser) peek_n(n int) Token {
 	return p.tokens[p.index + n]
 }
 
+// expect_kind_n checks if the token at the parser's index offset by `n` is the provided kind, and if not throws an error.
 @[inline]
 fn (p &Parser) expect_kind_n(kind TokenKind, n int) {
 	t := p.peek_n(n)
@@ -59,11 +92,13 @@ fn (p &Parser) expect_kind_n(kind TokenKind, n int) {
 	}
 }
 
+// expect_kind checks if the current token is the provided kind, and if not throws an error.
 @[inline]
 fn (p &Parser) expect_kind(kind TokenKind) {
 	p.expect_kind_n(kind, 0)
 }
 
+// expect_n checks if the token at the parser's index offset by `n` matches the provided kind and value, and if not throws an error.
 @[inline]
 fn (p &Parser) expect_n(kind TokenKind, value string, n int) {
 	t := p.peek_n(n)
@@ -74,42 +109,52 @@ fn (p &Parser) expect_n(kind TokenKind, value string, n int) {
 	}
 }
 
+// expect checks if the current token matches the provided kind and value, and if not throws an error.
 @[inline]
 fn (p &Parser) expect(kind TokenKind, value string) {
 	p.expect_n(kind, value, 0)
 }
 
+// check_n returns true if the token at the parser's index offset by `n` matches the provided kind and value.
 @[inline]
 fn (p &Parser) check_n(kind TokenKind, value string, n int) bool {
 	t := p.peek_n(n)
 	return t.kind == kind && t.value == value
 }
 
+// check returns true if the current token matches the provided kind and value.
 @[inline]
 fn (p &Parser) check(kind TokenKind, value string) bool {
 	return p.check_n(kind, value, 0)
 }
 
+// check_kind_n returns true if the token at the parser's index offset by `n` matches the provided kind.
 @[inline]
 fn (p &Parser) check_kind_n(kind TokenKind, n int) bool {
 	return p.peek_n(n).kind == kind
 }
 
+// check_kind returns true if the current token matches the provided kind.
 @[inline]
 fn (p &Parser) check_kind(kind TokenKind) bool {
 	return p.check_kind_n(kind, 0)
 }
 
+// check_value_n returns true if the token at the parser's index offset by `n` matches the provided value.
 @[inline]
 fn (p &Parser) check_value_n(value string, n int) bool {
 	return p.peek_n(n).value == value
 }
 
+// check_value returns true if the current token matches the provided value.
 @[inline]
 fn (p &Parser) check_value(value string) bool {
 	return p.check_value_n(value, 0)
 }
 
+// tokens_until_closing gets all tokens in between open_kind/open_value and close_kind/close_value.
+// when `start_with_open_value` is true, the function will call `Parser.expect(open_kind, open_value)`
+// also see: tokens_until
 @[direct_array_access; inline]
 fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, close_kind TokenKind, close_value string, start_with_open_value bool) []Token {
 	mut tokens := []Token{}
@@ -147,6 +192,8 @@ fn (mut p Parser) tokens_until_closing(open_kind TokenKind, open_value string, c
 	return tokens
 }
 
+// tokens_until gets all tokens until the given kind.
+// also see: tokens_until_closing
 fn (mut p Parser) tokens_until(kind TokenKind, value string) []Token {
 	mut tokens := []Token{}
 
@@ -164,12 +211,17 @@ fn (mut p Parser) tokens_until(kind TokenKind, value string) []Token {
 	return tokens
 }
 
+// parse_invoke parses tokens expecting to build an `ast.NodeInvoke`.
+// the provided `node` is the function, this will often be an identifier or dot operator.
+// the current node must be a `(` literal.
 @[inline]
 fn (mut p Parser) parse_invoke(node ast.INode) ast.NodeInvoke {
 	args := p.tokens_until_closing(.literal, '(', .literal, ')', true)
 	return ast.NodeInvoke{node, parse_comma_list(args, false)}
 }
 
+// parse_block parses tokens expecting to build an `ast.NodeBlock`.
+// the current node must be a `do` keyword.
 @[inline]
 fn (mut p Parser) parse_block() ast.NodeBlock {
 	p.expect(.keyword, 'do')
@@ -177,6 +229,8 @@ fn (mut p Parser) parse_block() ast.NodeBlock {
 	return ast.NodeBlock{parse_list(tokens)}
 }
 
+// parse_fn parses tokens expecting to build an `ast.NodeFn`.
+// the current node must be the token *after* a `fn` keyword.
 @[inline]
 fn (mut p Parser) parse_fn() ast.NodeFn {
 	p.expect_n(.keyword, 'fn', -1)
@@ -209,8 +263,11 @@ fn (mut p Parser) parse_fn() ast.NodeFn {
 	}
 }
 
+// parse_let parses tokens expecting to build an `ast.NodeLet`.
+// the current node must be the token *after* a `let` keyword.
 @[inline]
 fn (mut p Parser) parse_let() ast.NodeLet {
+	p.expect_n(.keyword, 'let', -1)
 	p.expect_kind(.id)
 	name := p.peek().value
 	p.skip()
@@ -223,6 +280,8 @@ fn (mut p Parser) parse_let() ast.NodeLet {
 	}
 }
 
+// parse_return parses tokens expecting to build an `ast.NodeReturn`.
+// the current node must be the token *after* a `return` keyword.
 @[inline]
 fn (mut p Parser) parse_return() ast.NodeReturn {
 	p.expect_n(.keyword, 'return', -1)
@@ -232,6 +291,8 @@ fn (mut p Parser) parse_return() ast.NodeReturn {
 	}
 }
 
+// parse_list parses tokens expecting to build an `ast.NodeList`.
+// the current node must be the token *after* a `[` literal.
 @[inline]
 fn (mut p Parser) parse_list() ast.NodeList {
 	p.expect_n(.literal, '[', -1)
@@ -241,6 +302,8 @@ fn (mut p Parser) parse_list() ast.NodeList {
 	}
 }
 
+// parse_table parses tokens expecting to build an `ast.NodeTable`.
+// the current node must be the token *after* a `{` keyword.
 @[inline]
 fn (mut p Parser) parse_table() ast.NodeTable {
 	p.expect_n(.literal, '{', -1)
@@ -273,6 +336,9 @@ fn (mut p Parser) parse_table() ast.NodeTable {
 	}
 }
 
+// parse_if parses tokens expecting to build an `ast.NodeIf`.
+// this will also parse corresponding `elseif` and `else` statements.
+// the current node must be the token *after* an `if` keyword.
 @[inline]
 pub fn (mut p Parser) parse_if() ast.NodeIf {
 	p.expect_n(.keyword, 'if', -1)
@@ -313,6 +379,7 @@ pub:
 	is_nested_operator bool
 }
 
+// parse_single parses the next AST node and returns it, it will return `none` when no more tokens remain (i.e, an EOF).
 @[inline]
 pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 	token := p.eat() or { return none }
@@ -393,6 +460,9 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 	return node
 }
 
+// check_for_operator checks if the current node being parsed is an operator, and if so, parses it, **mutating the provided `node` value.**
+// requires context of the current node being parsed (`node`) and the parameters passed into `parse_single` (`params`).
+// **the `node` value is mutated into an operator, not returned.**
 @[inline]
 fn (mut p Parser) check_for_operator(params ParseSingleParams, mut node ast.INode) {
 	if p.check_kind(.operator) && !p.check_value('!') && !p.check_value('~') {
@@ -433,6 +503,8 @@ fn (mut p Parser) check_for_operator(params ParseSingleParams, mut node ast.INod
 	}
 }
 
+// parse_list parses a list of tokens, creating a parser in the process.
+// returns the list of parsed nodes.
 @[inline]
 pub fn parse_list(tokens []Token) []ast.INode {
 	mut p := Parser{
@@ -447,6 +519,8 @@ pub fn parse_list(tokens []Token) []ast.INode {
 	return nodes
 }
 
+// parse_comma_list parses a list of tokens, expecting a comma in between each statement.
+// returns the list of parsed nodes.
 @[inline]
 pub fn parse_comma_list(tokens []Token, allow_trailing_comma bool) []ast.INode {
 	mut p := Parser{
@@ -470,6 +544,7 @@ pub fn parse_comma_list(tokens []Token, allow_trailing_comma bool) []ast.INode {
 	return nodes
 }
 
+// parse parses the provided list of tokens and returns them as an `ast.AST` to be interpreted.
 @[inline]
 pub fn parse(tokens []Token) ast.AST {
 	return ast.AST{
@@ -477,6 +552,7 @@ pub fn parse(tokens []Token) ast.AST {
 	}
 }
 
+// get_operator_kind_from_str gets the `ast.Operator` for the provided `value`.
 @[inline]
 pub fn get_operator_kind_from_str(value string) ast.Operator {
 	// vfmt off
@@ -509,39 +585,15 @@ pub fn get_operator_kind_from_str(value string) ast.Operator {
 	// vfmt on
 }
 
-// same as
-// https://en.cppreference.com/w/c/language/operator_precedence
-const operator_precedence = {
-	ast.Operator.dot: 0
-	.pipe:            1
-	.unary_not:       2
-	.bit_not:         2
-	.div:             3
-	.mul:             3
-	.mod:             3
-	.add:             4
-	.sub:             4
-	.shift_right:     5
-	.shift_left:      5
-	.gteq:            6
-	.lteq:            6
-	.gt:              6
-	.lt:              6
-	.eq:              7
-	.neq:             7
-	.bit_and:         8
-	.bit_xor:         9
-	.bit_or:          10
-	.and:             11
-	.or:              12
-	.assign:          14
-}
-
+// precedence_of_node gets operator precedence based on the provided AST node.
+// also see precedence_of_token.
 @[inline]
 pub fn precedence_of_node(node &ast.NodeOperator) int {
 	return operator_precedence[node.kind]
 }
 
+// precedence_of_token gets operator precedence based on the provided token.
+// also see precedence_of_node.
 @[inline]
 pub fn precedence_of_token(token &Token) int {
 	return operator_precedence[get_operator_kind_from_str(token.value)]

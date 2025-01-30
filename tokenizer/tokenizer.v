@@ -78,11 +78,13 @@ pub mut:
 	tokens []Token
 }
 
+// throw throws a tokenizer error and shows the line and column where the error occurred.
 @[noreturn]
 pub fn (t &Tokenizer) throw(msg string) {
 	panic('musi: tokenizer @ ${t.line}:${t.column}: ${msg}')
 }
 
+// next_str tokenizes the next string and returns the Token.
 @[inline]
 fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 	mut buffer := strings.new_builder(0)
@@ -105,6 +107,7 @@ fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 	t.throw('Tokenizer.next_str: escaped loop, this error should never happen.')
 }
 
+// next_id tokenizes the next identifier and returns the Token.
 @[inline]
 fn (mut t Tokenizer) next_id(start u8) Token {
 	mut buffer := strings.new_builder(1)
@@ -122,6 +125,8 @@ fn (mut t Tokenizer) next_id(start u8) Token {
 	t.throw('Tokenizer.next_id: escaped loop, this error should never happen.')
 }
 
+// next_number tokenizes the next number (whether an integer or a float) and returns the Token.
+// TODO: negative numbers
 @[inline]
 fn (mut t Tokenizer) next_number(start u8) Token {
 	mut buffer := strings.new_builder(1)
@@ -148,6 +153,7 @@ fn (mut t Tokenizer) next_number(start u8) Token {
 	t.throw('Tokenizer.next_number: escaped loop, this error should never happen.')
 }
 
+// tokenize tokenizes the tokens in a Tokenizer.
 pub fn (mut t Tokenizer) tokenize() {
 	mut ch := t.next()
 	mut ch_with_next := '${u8(ch).ascii_str()}${u8(t.peek()).ascii_str()}'
@@ -196,6 +202,7 @@ pub fn (mut t Tokenizer) tokenize() {
 	}
 }
 
+// write_tokens_to_file writes the given tokens to the file in the format `<kind:value>`.
 @[inline]
 pub fn write_tokens_to_file(tokens []Token, path string) ! {
 	os.write_file(path, tokens.map(|it| '<${it.kind}:${it.value}>').join('\n'))!
