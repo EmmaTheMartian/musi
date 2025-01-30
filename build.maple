@@ -2,10 +2,16 @@ plugins = [ 'v' ]
 
 config:v_main = 'src/main.v'
 
-config:sources = 'ast/ clockwork/ interpreter/ parser/ src/ tokenizer/ musi.v'
+config:sources = 'ast/ interpreter/ parser/ src/ tokenizer/ musi.v'
 
 task:vet = {
-	help = 'runs vvet on all of musi. this exists primarily for gitpod instances, where the v/ and clockwork/ directories exist which we should ignore from vvet'
+	help = 'runs vvet on all of musi. this exists primarily for gitpod instances, where the v/ directory exist which we should ignore from vvet'
 	category = 'misc'
 	run = '${v} vet -FIpr ${sources}'
+}
+
+task:fmt = {
+	help = 'runs vfmt on all of musi. this exists primarily for gitpod instances, where the v/ directory exist which we should ignore from vfmt'
+	category = 'misc'
+	run = '${v} fmt -w ${sources}'
 }
