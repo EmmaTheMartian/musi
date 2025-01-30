@@ -53,6 +53,7 @@ pub enum Operator {
 	unary_not
 	pipe
 	dot
+	assign
 }
 
 // nodes
@@ -64,7 +65,7 @@ pub mut:
 
 pub struct NodeInvoke implements INode {
 pub:
-	func string
+	func INode
 	args []INode
 }
 
@@ -105,15 +106,14 @@ pub:
 	value INode
 }
 
-pub struct NodeAssign implements INode {
-pub:
-	name  string
-	value INode
-}
-
 pub struct NodeList implements INode {
 pub:
 	values []INode
+}
+
+pub struct NodeTable implements INode {
+pub:
+	values map[string]INode
 }
 
 pub struct NodeReturn implements INode {

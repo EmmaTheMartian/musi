@@ -8,7 +8,7 @@ pub const valid_id_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 pub const numbers = '1234567890'
 pub const valid_number_runes = '.' + numbers // underscores are handled manually in parse_number
 pub const valid_id = valid_id_start + numbers
-pub const literals = ':;=()[]{},\\'
+pub const literals = ':;()[]{},\\'
 pub const whitespace = ' \r\n\t\f'
 pub const keywords = [
 	'fn',
@@ -47,6 +47,7 @@ pub const operators = [
 	'!',
 	'.',
 	'->',
+	'=',
 ]
 
 pub enum TokenKind {
@@ -93,6 +94,7 @@ fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 			t.line++
 			t.column = 0
 		} else if ch == quote_kind && t.peek_n(-1) != `\\` {
+			// todo: escape sequences
 			return Token{.str, buffer.str(), t.line, t.column}
 		}
 

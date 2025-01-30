@@ -15,10 +15,13 @@ pub mut:
 @[noreturn]
 pub fn (s &Scope) throw(message string) {
 	eprintln('---')
-	eprintln('musi error: ${message}')
+	eprintln('musi: interpreter: ${message}')
 	eprintln('stacktrace:')
 	eprintln(s.get_trace().map(|it| '\t${it}').join('\n'))
 	eprintln('---')
+	$if debug {
+		panic(message)
+	}
 	exit(1)
 }
 
@@ -34,28 +37,7 @@ pub fn (s &Scope) get_trace() []string {
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
 		ast.NodeInvoke {
-			variable := s.get(node.func) or { s.throw('no such function `${node.func}`') }
-
-			mut args := map[string]Value{}
-			if variable is ValueFunction {
-				if node.args.len != variable.args.len {
-					s.throw('${node.args.len} arguments provided but ${variable.args.len} are needed')
-				}
-				for index, arg in variable.args {
-					args[arg] = s.eval(node.args[index])
-				}
-			} else if variable is ValueNativeFunction {
-				if node.args.len != variable.args.len {
-					s.throw('${node.args.len} arguments provided but ${variable.args.len} are needed. provided: ${node.args}')
-				}
-				for index, arg in variable.args {
-					args[arg] = s.eval(node.args[index])
-				}
-			} else {
-				s.throw('attempted to invoke non-function: ${node.func}')
-			}
-
-			return s.invoke(node.func, args)
+			return s.invoke_node(node)
 		}
 		ast.NodeString {
 			return node.value
@@ -67,7 +49,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return node.value
 		}
 		ast.NodeId {
-			return s.get(node.value) or { s.throw('unknown variable: ${node.value}') }
+			return s.get(node.value) or { s.throw('unknown variable identifier: ${node.value}') }
 		}
 		ast.NodeBlock {
 			for child in node.nodes {
@@ -90,15 +72,17 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			s.new(node.name, value)
 			return value
 		}
-		ast.NodeAssign {
-			value := s.eval(node.value)
-			s.set(node.name, value)
-			return value
-		}
 		ast.NodeList {
 			mut values := []Value{}
 			for value in node.values {
 				values << s.eval(value)
+			}
+			return values
+		}
+		ast.NodeTable {
+			mut values := map[string]Value{}
+			for name, value in node.values {
+				values[name] = s.eval(value)
 			}
 			return values
 		}
@@ -204,10 +188,22 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 		.div { return Value((s.eval(node.left) as f64) / (s.eval(node.right) as f64)) }
 		.mul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
 		.mod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
-		.pipe {
-			return s.pipe(s.eval(node.left), node.right)
+		.pipe { return s.pipe(s.eval(node.left), node.right) }
+		.dot { return s.eval_dots(node) }
+		.assign {
+			value := s.eval(node.right)
+			if node.left is ast.NodeId {
+				s.set(node.left.value, value)
+			} else if node.left is ast.NodeString {
+				s.set(node.left.value, value)
+			} else if node.left is ast.NodeOperator && node.left.kind == .dot {
+				dots := s.resolve_dots(node.left)
+				s.set_nested(dots, value)
+			} else {
+				s.throw('assignment operator must have an identifier or string on the left.')
+			}
+			return value
 		}
-		.dot { }
 		// vfmt on
 		else {
 			s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
@@ -216,22 +212,90 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 	s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 }
 
-fn (mut s Scope) pipe(to_pipe Value, pipe_into &ast.INode) Value {
-	// to_pipe := s.eval(node.left)
+// gets the last value in a series of dots
+@[inline]
+fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
+	left := s.eval(node.left)
 
-	// sanity check
+	name := if node.right is ast.NodeId {
+		node.right.value
+	} else if node.right is ast.NodeString {
+		node.right.value
+	} else if node.right is ast.NodeInvoke {
+		if left is map[string]Value {
+			variable := if node.right.func is ast.NodeId {
+				left[node.right.func.value] or {
+					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
+				}
+			} else if node.right.func is ast.NodeString {
+				left[node.right.func.value] or {
+					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
+				}
+			} else {
+				s.throw('cannot get function `${node.right.func}` on right side of dot operator (.)')
+			}
+			args := s.eval_function_args(variable, node.right)
+			return s.invoke_value(variable, args)
+		}
+		s.throw('cannot use dot operator (.) on object `${left}`')
+	} else {
+		s.throw('eval_dots: expected identifier or string but got `${node.right}`')
+	}
+
+	if left is map[string]Value {
+		return left[name] or { s.throw('failed to get `${name}`') }
+	} else {
+		s.throw('cannot use dot operator on non-table types.')
+	}
+}
+
+@[inline]
+fn (mut s Scope) resolve_dots(node &ast.NodeOperator) []string {
+	mut dots := []string{}
+	dots << if node.left is ast.NodeId {
+		[node.left.value]
+	} else if node.left is ast.NodeString {
+		[node.left.value]
+	} else if node.left is ast.NodeOperator && node.left.kind == .dot {
+		s.resolve_dots(node.left)
+	} else {
+		s.throw('cannot resolve dots for ${node}')
+	}
+	dots << if node.right is ast.NodeId {
+		[node.right.value]
+	} else if node.right is ast.NodeString {
+		[node.right.value]
+	} else if node.right is ast.NodeOperator && node.right.kind == .dot {
+		s.resolve_dots(node.right)
+	} else {
+		s.throw('cannot resolve dots for ${node}')
+	}
+	return dots
+}
+
+@[inline]
+pub fn (mut s Scope) set_nested(dots []string, value Value) {
+	mut table := unsafe { &s.variables }
+	for i in 0 .. dots.len - 1 {
+		table = &(table.get(dots[i], s) as map[string]Value)
+	}
+	unsafe {
+		table[dots[dots.len - 1]] = value
+	}
+}
+
+@[inline]
+fn (mut s Scope) pipe(to_pipe Value, pipe_into &INode) Value {
 	if pipe_into is ast.NodeOperator && pipe_into.kind == .pipe {
 		// if we are piping into a pipe, we should evaluate the left expression, then pass that into the next
 		return s.pipe(s.pipe(to_pipe, pipe_into.left), pipe_into.right)
-
-		// s.throw('parser built an AST where a pipe pipes into a pipe, this error should never happen. Please report it.')
 	}
 
 	if pipe_into !is ast.NodeInvoke {
 		s.throw('cannot pipe into a non-function')
 	}
 	func := pipe_into as ast.NodeInvoke
-	variable := s.get(func.func) or { s.throw('no such function `${func.func}`') }
+	variable := s.eval(func.func)
 
 	mut args := map[string]Value{}
 	if variable is ValueFunction {
@@ -254,7 +318,7 @@ fn (mut s Scope) pipe(to_pipe Value, pipe_into &ast.INode) Value {
 		s.throw('attempted to invoke non-function: ${func.func}')
 	}
 
-	return s.invoke(func.func, args)
+	return s.invoke_eval(func.func, args)
 }
 
 pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
@@ -266,6 +330,60 @@ pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
 	} else {
 		s.throw('attempted to invoke non-function: ${func}')
 	}
+}
+
+@[inline]
+pub fn (mut s Scope) invoke_value(func Value, args map[string]Value) Value {
+	if func is ValueFunction {
+		return func.run(mut s, args)
+	} else if func is ValueNativeFunction {
+		return func.run(mut s, args)
+	} else {
+		s.throw('attempted to invoke non-function: ${func}')
+	}
+}
+
+@[inline]
+fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
+	variable := s.eval(func)
+	if variable is ValueFunction {
+		return variable.run(mut s, args)
+	} else if variable is ValueNativeFunction {
+		return variable.run(mut s, args)
+	} else {
+		s.throw('attempted to invoke non-function: ${func}')
+	}
+}
+
+@[inline]
+fn (mut s Scope) eval_function_args(func Value, node &ast.NodeInvoke) map[string]Value {
+	mut args := map[string]Value{}
+	if func is ValueFunction {
+		if node.args.len != func.args.len {
+			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed')
+		}
+		for index, arg in func.args {
+			args[arg] = s.eval(node.args[index])
+		}
+	} else if func is ValueNativeFunction {
+		if node.args.len != func.args.len {
+			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed. provided: ${node.args}')
+		}
+		for index, arg in func.args {
+			args[arg] = s.eval(node.args[index])
+		}
+	} else {
+		s.throw('attempted to eval arguments for non-function: ${func}')
+	}
+
+	return args
+}
+
+@[inline]
+fn (mut s Scope) invoke_node(node &ast.NodeInvoke) Value {
+	variable := s.eval(node.func)
+	args := s.eval_function_args(variable, node)
+	return s.invoke_eval(node.func, args)
 }
 
 @[inline]
