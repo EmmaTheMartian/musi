@@ -37,29 +37,7 @@ pub fn (s &Scope) get_trace() []string {
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
 		ast.NodeInvoke {
-			// variable := s.get(node.func) or { s.throw('no such function `${node.func}`') }
-			variable := s.eval(node.func)
-
-			mut args := map[string]Value{}
-			if variable is ValueFunction {
-				if node.args.len != variable.args.len {
-					s.throw('${node.args.len} arguments provided but ${variable.args.len} are needed')
-				}
-				for index, arg in variable.args {
-					args[arg] = s.eval(node.args[index])
-				}
-			} else if variable is ValueNativeFunction {
-				if node.args.len != variable.args.len {
-					s.throw('${node.args.len} arguments provided but ${variable.args.len} are needed. provided: ${node.args}')
-				}
-				for index, arg in variable.args {
-					args[arg] = s.eval(node.args[index])
-				}
-			} else {
-				s.throw('attempted to invoke non-function: ${node.func}')
-			}
-
-			return s.invoke_eval(node.func, args)
+			return s.invoke_node(node)
 		}
 		ast.NodeString {
 			return node.value
@@ -71,7 +49,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return node.value
 		}
 		ast.NodeId {
-			return s.get(node.value) or { s.throw('unknown variable: ${node.value}') }
+			return s.get(node.value) or { s.throw('unknown variable identifier: ${node.value}') }
 		}
 		ast.NodeBlock {
 			for child in node.nodes {
@@ -243,6 +221,23 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
 		node.right.value
 	} else if node.right is ast.NodeString {
 		node.right.value
+	} else if node.right is ast.NodeInvoke {
+		if left is map[string]Value {
+			variable := if node.right.func is ast.NodeId {
+				left[node.right.func.value] or {
+					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
+				}
+			} else if node.right.func is ast.NodeString {
+				left[node.right.func.value] or {
+					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
+				}
+			} else {
+				s.throw('cannot get function `${node.right.func}` on right side of dot operator (.)')
+			}
+			args := s.eval_function_args(variable, node.right)
+			return s.invoke_value(variable, args)
+		}
+		s.throw('cannot use dot operator (.) on object `${left}`')
 	} else {
 		s.throw('eval_dots: expected identifier or string but got `${node.right}`')
 	}
@@ -337,7 +332,19 @@ pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
 	}
 }
 
-pub fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
+@[inline]
+pub fn (mut s Scope) invoke_value(func Value, args map[string]Value) Value {
+	if func is ValueFunction {
+		return func.run(mut s, args)
+	} else if func is ValueNativeFunction {
+		return func.run(mut s, args)
+	} else {
+		s.throw('attempted to invoke non-function: ${func}')
+	}
+}
+
+@[inline]
+fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
 	variable := s.eval(func)
 	if variable is ValueFunction {
 		return variable.run(mut s, args)
@@ -346,6 +353,37 @@ pub fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
 	} else {
 		s.throw('attempted to invoke non-function: ${func}')
 	}
+}
+
+@[inline]
+fn (mut s Scope) eval_function_args(func Value, node &ast.NodeInvoke) map[string]Value {
+	mut args := map[string]Value{}
+	if func is ValueFunction {
+		if node.args.len != func.args.len {
+			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed')
+		}
+		for index, arg in func.args {
+			args[arg] = s.eval(node.args[index])
+		}
+	} else if func is ValueNativeFunction {
+		if node.args.len != func.args.len {
+			s.throw('${node.args.len} arguments provided but ${func.args.len} are needed. provided: ${node.args}')
+		}
+		for index, arg in func.args {
+			args[arg] = s.eval(node.args[index])
+		}
+	} else {
+		s.throw('attempted to eval arguments for non-function: ${func}')
+	}
+
+	return args
+}
+
+@[inline]
+fn (mut s Scope) invoke_node(node &ast.NodeInvoke) Value {
+	variable := s.eval(node.func)
+	args := s.eval_function_args(variable, node)
+	return s.invoke_eval(node.func, args)
 }
 
 @[inline]

@@ -322,12 +322,7 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 			p.throw('parse_single given an empty token: ${token}')
 		}
 		.id {
-			// if the next token is an open parenthesis, we are invoking something
-			// if p.check(.literal, '(') && !params.is_nested_operator {
-			// 	node = p.parse_invoke(ast.NodeId{token.value})
-			// } else {
-				node = ast.NodeId{token.value}
-			// }
+			node = ast.NodeId{token.value}
 		}
 		.keyword {
 			if token.value == 'let' {
@@ -388,7 +383,7 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 	})
 
 	// if the next token is an open parenthesis, we are invoking something
-	if p.check(.literal, '(') && !params.is_nested_operator {
+	if p.check(.literal, '(') {
 		node = p.parse_invoke(node or {
 			p.throw('`node` was assigned previously but is now none. If this error occurs then your computer was likely hit with solar rays.')
 		})
