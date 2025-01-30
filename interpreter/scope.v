@@ -15,10 +15,13 @@ pub mut:
 @[noreturn]
 pub fn (s &Scope) throw(message string) {
 	eprintln('---')
-	eprintln('musi error: ${message}')
+	eprintln('musi: interpreter: ${message}')
 	eprintln('stacktrace:')
 	eprintln(s.get_trace().map(|it| '\t${it}').join('\n'))
 	eprintln('---')
+	$if debug {
+		panic(message)
+	}
 	exit(1)
 }
 
@@ -91,11 +94,11 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			s.new(node.name, value)
 			return value
 		}
-		ast.NodeAssign {
-			value := s.eval(node.value)
-			s.set(node.name, value)
-			return value
-		}
+		// ast.NodeAssign {
+		// 	value := s.eval(node.value)
+		// 	s.set(node.name, value)
+		// 	return value
+		// }
 		ast.NodeList {
 			mut values := []Value{}
 			for value in node.values {
@@ -213,25 +216,20 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 		.mul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
 		.mod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
 		.pipe { return s.pipe(s.eval(node.left), node.right) }
-		.dot {
-			// get the left value
-			left := s.eval(node.left)
-
-			name := if node.right is ast.NodeId {
-				node.right.value
-			} else if node.right is ast.NodeString {
-				node.right.value
+		.dot { return s.eval_dots(node) }
+		.assign {
+			value := s.eval(node.right)
+			if node.left is ast.NodeId {
+				s.set(node.left.value, value)
+			} else if node.left is ast.NodeString {
+				s.set(node.left.value, value)
+			} else if node.left is ast.NodeOperator && node.left.kind == .dot {
+				dots := s.resolve_dots(node.left)
+				s.set_nested(dots, value)
 			} else {
-				s.throw('expected identifier or string but got `${node.right}`')
+				s.throw('assignment operator must have an identifier or string on the left.')
 			}
-
-			if left is map[string]Value {
-				return left[name] or {
-					s.throw('failed to get `${name}`')
-				}
-			} else {
-				s.throw('cannot use dot operator on non-table types.')
-			}
+			return value
 		}
 		// vfmt on
 		else {
@@ -241,7 +239,63 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 	s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 }
 
-fn (mut s Scope) pipe(to_pipe Value, pipe_into &ast.INode) Value {
+// gets the last value in a series of dots
+@[inline]
+fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
+	left := s.eval(node.left)
+
+	name := if node.right is ast.NodeId {
+		node.right.value
+	} else if node.right is ast.NodeString {
+		node.right.value
+	} else {
+		s.throw('eval_dots: expected identifier or string but got `${node.right}`')
+	}
+
+	if left is map[string]Value {
+		return left[name] or { s.throw('failed to get `${name}`') }
+	} else {
+		s.throw('cannot use dot operator on non-table types.')
+	}
+}
+
+@[inline]
+fn (mut s Scope) resolve_dots(node &ast.NodeOperator) []string {
+	mut dots := []string{}
+	dots << if node.left is ast.NodeId {
+		[node.left.value]
+	} else if node.left is ast.NodeString {
+		[node.left.value]
+	} else if node.left is ast.NodeOperator && node.left.kind == .dot {
+		s.resolve_dots(node.left)
+	} else {
+		s.throw('cannot resolve dots for ${node}')
+	}
+	dots << if node.right is ast.NodeId {
+		[node.right.value]
+	} else if node.right is ast.NodeString {
+		[node.right.value]
+	} else if node.right is ast.NodeOperator && node.right.kind == .dot {
+		s.resolve_dots(node.right)
+	} else {
+		s.throw('cannot resolve dots for ${node}')
+	}
+	return dots
+}
+
+@[inline]
+pub fn (mut s Scope) set_nested(dots []string, value Value) {
+	mut table := unsafe { &s.variables }
+	for i in 0 .. dots.len - 1 {
+		table = &(table.get(dots[i], s) as map[string]Value)
+	}
+	unsafe {
+		table[dots[dots.len - 1]] = value
+	}
+}
+
+@[inline]
+fn (mut s Scope) pipe(to_pipe Value, pipe_into &INode) Value {
 	if pipe_into is ast.NodeOperator && pipe_into.kind == .pipe {
 		// if we are piping into a pipe, we should evaluate the left expression, then pass that into the next
 		return s.pipe(s.pipe(to_pipe, pipe_into.left), pipe_into.right)
@@ -252,7 +306,6 @@ fn (mut s Scope) pipe(to_pipe Value, pipe_into &ast.INode) Value {
 	}
 	func := pipe_into as ast.NodeInvoke
 	variable := s.eval(func.func)
-	// variable := s.get(func.func) or { s.throw('no such function `${func.func}`') }
 
 	mut args := map[string]Value{}
 	if variable is ValueFunction {
@@ -289,7 +342,7 @@ pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
 	}
 }
 
-pub fn (mut s Scope) invoke_eval(func &ast.INode, args map[string]Value) Value {
+pub fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
 	variable := s.eval(func)
 	if variable is ValueFunction {
 		return variable.run(mut s, args)

@@ -1,6 +1,6 @@
 let module = {}
 
-let module.test = fn
+module.test = fn
 	condition_name,
 	condition,
 	expected

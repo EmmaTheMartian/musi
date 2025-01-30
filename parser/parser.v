@@ -14,7 +14,10 @@ const tokens_to_check_for_operators = [
 // operators where nested operators should be given to the leftmost operator instead of the rightmost.
 // nodes excluded from this list resolve as: 1 + 2 + 3 resolves to add(1, add(2, 3))
 // nodes in this list resolve as: 1 + 2 + 3 resolves to add(add(1, 2), 3)
-const operators_with_left_priority = []ast.Operator{}
+const operators_with_left_priority = [
+	ast.Operator.assign,
+	ast.Operator.dot,
+]
 
 pub struct Parser {
 pub mut:
@@ -221,7 +224,7 @@ fn (mut p Parser) parse_let() ast.NodeLet {
 	p.expect_kind(.id)
 	name := p.peek().value
 	p.skip()
-	p.expect(.literal, '=')
+	p.expect(.operator, '=')
 	p.skip()
 	value := p.parse_single() or { p.throw('unexpected eof before let value') }
 	return ast.NodeLet{
@@ -239,18 +242,18 @@ fn (mut p Parser) parse_return() ast.NodeReturn {
 	}
 }
 
-@[inline]
-fn (mut p Parser) parse_assign() ast.NodeAssign {
-	p.expect_kind_n(.id, -1)
-	name := p.peek_n(-1).value
-	p.expect(.literal, '=')
-	p.skip()
-	value := p.parse_single() or { p.throw('unexpected eof before assignment value') }
-	return ast.NodeAssign{
-		name:  name
-		value: value
-	}
-}
+// @[inline]
+// fn (mut p Parser) parse_assign() ast.NodeAssign {
+// 	p.expect_kind_n(.id, -1)
+// 	name := p.peek_n(-1).value
+// 	p.expect(.literal, '=')
+// 	p.skip()
+// 	value := p.parse_single() or { p.throw('unexpected eof before assignment value') }
+// 	return ast.NodeAssign{
+// 		name:  name
+// 		value: value
+// 	}
+// }
 
 @[inline]
 fn (mut p Parser) parse_list() ast.NodeList {
@@ -271,11 +274,9 @@ fn (mut p Parser) parse_table() ast.NodeTable {
 		if p.check_kind(.id) || p.check_kind(.str) {
 			name := p.peek().value
 			p.skip()
-			p.expect(.literal, '=')
+			p.expect(.operator, '=')
 			p.skip()
-			value := p.parse_single() or {
-				p.throw('unexpected EOF')
-			}
+			value := p.parse_single() or { p.throw('unexpected EOF') }
 			// optional comma
 			if p.check(.literal, ',') {
 				p.skip()
@@ -341,10 +342,10 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 			// if the next token is an open parenthesis, we are invoking something
 			if p.check(.literal, '(') {
 				node = p.parse_invoke(ast.NodeId{token.value})
-			}
-			// if the next token is an equals sign, we are assigning
-			else if p.check(.literal, '=') {
-				node = p.parse_assign()
+				// }
+				// if the next token is an equals sign, we are assigning
+				// else if p.check(.literal, '=') {
+				// 	node = p.parse_assign()
 			} else {
 				node = ast.NodeId{token.value}
 			}
@@ -401,7 +402,8 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 
 	// if the next token is an operator, instead of returning this token, we
 	// will return the operator with this as the `left` value.
-	if token.kind in tokens_to_check_for_operators && p.check_kind(.operator) && !p.check_value('!') && !p.check_value('~') {
+	if token.kind in tokens_to_check_for_operators && p.check_kind(.operator) && !p.check_value('!')
+		&& !p.check_value('~') {
 		operator := p.eat() or {
 			p.throw('parse_single failed to get an operator that we KNOW exists. If this error occurs then your computer was probably hit with solar rays.')
 		}
@@ -512,6 +514,7 @@ pub fn get_operator_kind_from_str(value string) ast.Operator {
 	else if value == '!' { .unary_not }
 	else if value == '.' { .dot }
 	else if value == '->' { .pipe }
+	else if value == '=' { .assign }
 	else {
 		panic('musi: get_operator_kind_from_str: given invalid value: ${value}')
 	}
@@ -543,6 +546,7 @@ const operator_precedence = {
 	.bit_or:          10
 	.and:             11
 	.or:              12
+	.assign:          14
 }
 
 @[inline]

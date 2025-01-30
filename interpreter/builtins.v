@@ -1,5 +1,7 @@
 module interpreter
 
+import strings
+
 pub fn apply_builtins(mut scope Scope) {
 	// modules
 
@@ -35,10 +37,12 @@ pub fn apply_builtins(mut scope Scope) {
 					return Value(thing.tracer)
 				}
 				[]Value {
-					return Value('list')
+					return Value(thing.str())
+					// return Value('list')
 				}
 				map[string]Value {
-					return Value('table')
+					return Value(thing.str())
+					// return Value('table')
 				}
 				ValueNull {
 					return Value('null')
@@ -62,6 +66,25 @@ pub fn apply_builtins(mut scope Scope) {
 				else {
 					scope.throw('tonumber: cannot cast ${typeof(thing).name} to number')
 				}
+			}
+		}
+	})
+
+	// types
+
+	scope.new('typeof', ValueNativeFunction{
+		tracer: 'typeof'
+		args:   ['it']
+		code:   fn (mut scope Scope) Value {
+			return match get_fn_arg_raw(scope, 'it', 'typeof') {
+				string { 'string' }
+				f64 { 'float' }
+				bool { 'bool' }
+				ValueFunction { 'fn' }
+				ValueNativeFunction { 'nfn' }
+				[]Value { 'list' }
+				map[string]Value { 'table' }
+				ValueNull { 'null' }
 			}
 		}
 	})
@@ -161,6 +184,75 @@ pub fn apply_builtins(mut scope Scope) {
 		}
 	})
 
+	scope.new('map', ValueNativeFunction{
+		tracer: 'map'
+		args:   ['list', 'predicate']
+		code:   fn (mut scope Scope) Value {
+			to_map := get_fn_arg[[]Value](scope, 'list', 'map')
+			predicate := get_fn_arg_raw(scope, 'predicate', 'map')
+			mut mapped := []Value{}
+			for x in to_map {
+				mapped << scope.eval_function_list_args(predicate, [x])
+			}
+			return Value(mapped)
+		}
+	})
+
+	// tables
+
+	scope.new('keys', ValueNativeFunction{
+		tracer: 'keys'
+		args:   ['table']
+		code:   fn (mut scope Scope) Value {
+			table := get_fn_arg[map[string]Value](scope, 'table', 'keys')
+			return Value(table.keys().map(|it| Value(it)))
+		}
+	})
+
+	scope.new('values', ValueNativeFunction{
+		tracer: 'values'
+		args:   ['table']
+		code:   fn (mut scope Scope) Value {
+			table := get_fn_arg[map[string]Value](scope, 'table', 'values')
+			return Value(table.values())
+		}
+	})
+
+	scope.new('pairs', ValueNativeFunction{
+		tracer: 'pairs'
+		args:   ['table']
+		code:   fn (mut scope Scope) Value {
+			table := get_fn_arg[map[string]Value](scope, 'table', 'pairs')
+			mut pairs := []Value{}
+			for key, value in table {
+				pairs << {
+					'key':   Value(key)
+					'value': value
+				}
+			}
+			return Value(pairs)
+		}
+	})
+
+	scope.new('ipairs', ValueNativeFunction{
+		tracer: 'ipairs'
+		args:   ['table']
+		code:   fn (mut scope Scope) Value {
+			table := get_fn_arg[map[string]Value](scope, 'table', 'pairs')
+			mut pairs := []Value{}
+			mut i := 0
+			for key, value in table {
+				pairs << {
+					'index': Value(f64(i))
+					'key':   Value(key)
+					'value': value
+				}
+				i++
+			}
+			return Value(pairs)
+		}
+	})
+
 	// comparison
 
 	add_comparison_operator(mut scope, 'equals', |a, b| a == b)
@@ -221,6 +313,18 @@ pub fn apply_builtins(mut scope Scope) {
 			a := int(get_fn_arg[f64](scope, 'a', 'mod'))
 			b := int(get_fn_arg[f64](scope, 'b', 'mod'))
 			return Value(f64(a % b))
+		}
+	})
+
+	// strings
+
+	scope.new('repeatstring', ValueNativeFunction{
+		tracer: 'repeatstring'
+		args:   ['string', 'count']
+		code:   fn (mut scope Scope) Value {
+			str := get_fn_arg[string](scope, 'string', 'repeatstring')
+			count := int(get_fn_arg[f64](scope, 'count', 'repeatstring'))
+			return Value(strings.repeat_string(str, count))
 		}
 	})
 }

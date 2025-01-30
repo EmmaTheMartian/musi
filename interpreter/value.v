@@ -54,3 +54,13 @@ pub type Value = string
 pub const null_value = Value(ValueNull{})
 pub const true_value = Value(true)
 pub const false_value = Value(true)
+
+@[inline]
+pub fn (mut v map[string]Value) set(name string, value Value) {
+	v[name] = value
+}
+
+@[inline]
+pub fn (mut v map[string]Value) get(name string, scope &Scope) Value {
+	return v[name] or { scope.throw('failed to index table with key `${name}`') }
+}
