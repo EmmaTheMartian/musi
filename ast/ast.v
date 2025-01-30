@@ -54,7 +54,6 @@ pub enum Operator {
 	pipe
 	dot
 	assign
-	concat
 }
 
 // nodes
@@ -106,12 +105,6 @@ pub:
 	name  string
 	value INode
 }
-
-// pub struct NodeAssign implements INode {
-// pub:
-// 	name  string
-// 	value INode
-// }
 
 pub struct NodeList implements INode {
 pub:

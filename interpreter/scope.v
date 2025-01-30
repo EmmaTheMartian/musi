@@ -94,11 +94,6 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			s.new(node.name, value)
 			return value
 		}
-		// ast.NodeAssign {
-		// 	value := s.eval(node.value)
-		// 	s.set(node.name, value)
-		// 	return value
-		// }
 		ast.NodeList {
 			mut values := []Value{}
 			for value in node.values {

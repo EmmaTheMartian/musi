@@ -1,4 +1,3 @@
 let testing = import("testing.musi")
-let test = testing.test # todo: fix `testing.test()`
 
-test('some test', true, true)
+testing.test('some test', true, true)

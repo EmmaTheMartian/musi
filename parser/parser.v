@@ -3,14 +3,6 @@ module parser
 import ast
 import tokenizer { Token, TokenKind }
 
-// tokens that we should check for operators after
-const tokens_to_check_for_operators = [
-	TokenKind.id,
-	TokenKind.str,
-	TokenKind.number,
-	TokenKind.boolean,
-]
-
 // operators where nested operators should be given to the leftmost operator instead of the rightmost.
 // nodes excluded from this list resolve as: 1 + 2 + 3 resolves to add(1, add(2, 3))
 // nodes in this list resolve as: 1 + 2 + 3 resolves to add(add(1, 2), 3)
@@ -174,8 +166,6 @@ fn (mut p Parser) tokens_until(kind TokenKind, value string) []Token {
 
 @[inline]
 fn (mut p Parser) parse_invoke(node ast.INode) ast.NodeInvoke {
-	// p.expect_kind_n(.id, -1)
-	// name := p.peek_n(-1).value
 	args := p.tokens_until_closing(.literal, '(', .literal, ')', true)
 	return ast.NodeInvoke{node, parse_comma_list(args, false)}
 }
@@ -241,19 +231,6 @@ fn (mut p Parser) parse_return() ast.NodeReturn {
 		node: node
 	}
 }
-
-// @[inline]
-// fn (mut p Parser) parse_assign() ast.NodeAssign {
-// 	p.expect_kind_n(.id, -1)
-// 	name := p.peek_n(-1).value
-// 	p.expect(.literal, '=')
-// 	p.skip()
-// 	value := p.parse_single() or { p.throw('unexpected eof before assignment value') }
-// 	return ast.NodeAssign{
-// 		name:  name
-// 		value: value
-// 	}
-// }
 
 @[inline]
 fn (mut p Parser) parse_list() ast.NodeList {
@@ -330,8 +307,14 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 	return ast.NodeIf{chain}
 }
 
+@[params]
+pub struct ParseSingleParams {
+pub:
+	is_nested_operator bool
+}
+
 @[inline]
-pub fn (mut p Parser) parse_single() ?ast.INode {
+pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 	token := p.eat() or { return none }
 	mut node := ?ast.INode(none)
 	match token.kind {
@@ -340,15 +323,11 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 		}
 		.id {
 			// if the next token is an open parenthesis, we are invoking something
-			if p.check(.literal, '(') {
-				node = p.parse_invoke(ast.NodeId{token.value})
-				// }
-				// if the next token is an equals sign, we are assigning
-				// else if p.check(.literal, '=') {
-				// 	node = p.parse_assign()
-			} else {
+			// if p.check(.literal, '(') && !params.is_nested_operator {
+			// 	node = p.parse_invoke(ast.NodeId{token.value})
+			// } else {
 				node = ast.NodeId{token.value}
-			}
+			// }
 		}
 		.keyword {
 			if token.value == 'let' {
@@ -388,6 +367,8 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 				node = ast.NodeUnaryOperator{.bit_not, p.parse_single() or {
 					p.throw('expected expression after bitwise not operator')
 				}}
+			} else {
+				p.throw('attempted to parse non-unary operator. this error should never happen, please report it.')
 			}
 			// all other operators are handled below
 		}
@@ -402,17 +383,31 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 
 	// if the next token is an operator, instead of returning this token, we
 	// will return the operator with this as the `left` value.
-	if token.kind in tokens_to_check_for_operators && p.check_kind(.operator) && !p.check_value('!')
-		&& !p.check_value('~') {
+	p.check_for_operator(params, mut node or {
+		p.throw('parse_single node was none but we previously checked it was not. If this error occurs then your computer was probably hit with solar rays.')
+	})
+
+	// if the next token is an open parenthesis, we are invoking something
+	if p.check(.literal, '(') && !params.is_nested_operator {
+		node = p.parse_invoke(node or {
+			p.throw('`node` was assigned previously but is now none. If this error occurs then your computer was likely hit with solar rays.')
+		})
+		p.check_for_operator(params, mut node)
+	}
+
+	return node
+}
+
+@[inline]
+fn (mut p Parser) check_for_operator(params ParseSingleParams, mut node ast.INode) {
+	if p.check_kind(.operator) && !p.check_value('!') && !p.check_value('~') {
 		operator := p.eat() or {
 			p.throw('parse_single failed to get an operator that we KNOW exists. If this error occurs then your computer was probably hit with solar rays.')
 		}
 
-		node_not_none := node or {
-			p.throw('parse_single node was none but we previously checked it was not. If this error occurs then your computer was probably hit with solar rays.')
-		}
+		node_not_none := node
 
-		mut next_node := p.parse_single() or {
+		mut next_node := p.parse_single(is_nested_operator: true) or {
 			p.throw('right side of operator was none. error: ${err}')
 		}
 
@@ -441,8 +436,6 @@ pub fn (mut p Parser) parse_single() ?ast.INode {
 			}
 		}
 	}
-
-	return node
 }
 
 @[inline]
