@@ -53,6 +53,7 @@ pub type Value = string
 	| []Value
 	| map[string]Value
 	| ValueNull
+	| voidptr
 
 pub const null_value = Value(ValueNull{})
 pub const true_value = Value(true)

@@ -1,5 +1,6 @@
 plugins = [ 'v' ]
 
+config:v_args = '-enable-globals'
 config:v_main = 'src/main.v'
 
 config:musi_flags = '-syntax-debug'
@@ -9,15 +10,15 @@ config:sources = 'ast/ interpreter/ parser/ src/ stdlib/ tokenizer/ musi.v'
 task:test.sample = {
 	help = 'Tests a specific sample'
 	category = 'test'
-	run = '${v} -g run ${v_main} run ${musi_flags} samples/${args}.musi'
+	run = '${v} ${v_args} -g run ${v_main} run ${musi_flags} samples/${args}.musi'
 }
 
 task:test.samples = {
 	help = 'Tests each sample'
 	category = 'test'
 	run = [
-		'${v} -g run ${v_main} run ${musi_flags} samples/hello.musi',
-		'${v} -g run ${v_main} run ${musi_flags} samples/fib.musi'
+		'${v} ${v_args} -g run ${v_main} run ${musi_flags} samples/hello.musi',
+		'${v} ${v_args} -g run ${v_main} run ${musi_flags} samples/fib.musi'
 	]
 }
 

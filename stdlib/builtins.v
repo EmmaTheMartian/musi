@@ -37,6 +37,7 @@ fn tostring(mut scope Scope) Value {
 		ValueNull {
 			return 'null'
 		}
+		voidptr { return 'voidptr' }
 	}
 }
 
@@ -67,6 +68,7 @@ fn typeof_(mut scope Scope) Value {
 		[]Value { 'list' }
 		map[string]Value { 'table' }
 		ValueNull { 'null' }
+		voidptr { 'voidptr' }
 	}
 }
 

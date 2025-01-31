@@ -1,0 +1,20 @@
+let file = null
+let text = null
+if files.exists('test.txt') do
+	file = files.open('test.txt', 'r')
+end else do
+	file = files.create('test.txt')
+	files.write(file, 'Hello, World!')
+	# we close and reopen the file so that its file size is updated
+	files.close(file)
+	file = files.open('text.txt', 'r')
+end
+
+print('index in global file handler: ')
+println(file)
+
+text = files.read(file, files.size('test.txt'))
+print('text: ')
+println(text)
+
+files.close(file)
