@@ -19,12 +19,19 @@ fn tochar(mut scope Scope) Value {
 fn charat(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'charat')
 	index := int(scope.get_fn_arg[f64]('index', 'charat'))
-	return str[index].ascii_str()
+	unsafe {
+		return str[index].ascii_str()
+	}
 }
 
 @[inline]
 fn strlength(mut scope Scope) Value {
 	return f64(scope.get_fn_arg[string]('string', 'length').len)
+}
+
+@[inline]
+fn chars(mut scope Scope) Value {
+	return scope.get_fn_arg[string]('string', 'length').runes().map(|it| Value(it.str()))
 }
 
 pub const strings_module = {
@@ -47,6 +54,11 @@ pub const strings_module = {
 		tracer: 'length'
 		args:   ['string']
 		code:   strlength
+	}
+	'chars':        ValueNativeFunction{
+		tracer: 'chars'
+		args:   ['string']
+		code:   chars
 	}
 }
 

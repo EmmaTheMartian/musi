@@ -43,6 +43,7 @@ const operator_precedence = {
 pub struct Parser {
 pub mut:
 	index  int
+pub:
 	tokens []Token
 }
 
@@ -50,7 +51,10 @@ pub mut:
 @[noreturn]
 pub fn (p &Parser) throw(msg string) {
 	if p.index >= p.tokens.len {
-		panic('musi: parser @ token #${p.index}/${p.tokens.len}: ${msg}')
+		$if debug {
+			println(p.tokens)
+		}
+		panic('musi: parser @ token #${p.index}/${p.tokens.len}: ${msg} (last token: ${p.tokens.last()})')
 	}
 	panic('musi: parser @ ${p.peek().line}:${p.peek().column}: ${msg}')
 }
@@ -374,6 +378,18 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 	return ast.NodeIf{chain}
 }
 
+// parse_while parses tokens expecting to build an `ast.NodeWhile`.
+// the current node must be the token *after* an `while` keyword.
+@[inline]
+pub fn (mut p Parser) parse_while() ast.NodeWhile {
+	p.expect_n(.keyword, 'while', -1)
+	cond := p.parse_single() or {
+		p.throw('expected expression after `while` keyword.')
+	}
+	code := p.parse_block()
+	return ast.NodeWhile{cond, code}
+}
+
 @[params]
 pub struct ParseSingleParams {
 pub:
@@ -403,6 +419,8 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 				node = p.parse_return()
 			} else if token.value == 'if' {
 				node = p.parse_if()
+			} else if token.value == 'while' {
+				node = p.parse_while()
 			}
 		}
 		.literal {

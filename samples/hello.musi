@@ -2,10 +2,3 @@ println("Hello, World!")
 
 # You can also pipe the string into the function, if you prefer:
 "Hello, Again!" -> println()
-
-let table = {}
-println(table)
-tables.user = 'emma'
-println(table)
-tables.pass = 'amme'
-println(table)

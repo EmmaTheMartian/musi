@@ -128,4 +128,10 @@ pub:
 	chain []IfChainElement
 }
 
+pub struct NodeWhile implements INode {
+pub:
+	cond INode
+	code NodeBlock
+}
+
 pub struct NodeEOF {}

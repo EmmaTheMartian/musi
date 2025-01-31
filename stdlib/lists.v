@@ -4,7 +4,7 @@ import interpreter { IFunctionValue, Scope, Value, ValueFunction, ValueNativeFun
 
 @[inline]
 fn append(mut scope Scope) Value {
-	mut list := scope.get_fn_arg[[]Value]('list', 'append')
+	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'append')
 	value := scope.get_fn_arg_raw('value', 'append')
 	list << value
 	return interpreter.null_value
@@ -12,7 +12,7 @@ fn append(mut scope Scope) Value {
 
 @[inline]
 fn prepend(mut scope Scope) Value {
-	mut list := scope.get_fn_arg[[]Value]('list', 'prepend')
+	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'prepend')
 	value := scope.get_fn_arg_raw('value', 'prepend')
 	list.prepend(value)
 	return interpreter.null_value
@@ -20,13 +20,13 @@ fn prepend(mut scope Scope) Value {
 
 @[inline]
 fn pop(mut scope Scope) Value {
-	mut list := scope.get_fn_arg[[]Value]('list', 'pop')
+	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'pop')
 	return list.pop()
 }
 
 @[inline]
 fn delete(mut scope Scope) Value {
-	mut list := scope.get_fn_arg[[]Value]('list', 'delete')
+	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'delete')
 	index := int(scope.get_fn_arg[f64]('index', 'delete'))
 	list.delete(index)
 	return interpreter.null_value
@@ -34,17 +34,19 @@ fn delete(mut scope Scope) Value {
 
 @[inline]
 fn clear(mut scope Scope) Value {
-	mut list := scope.get_fn_arg[[]Value]('list', 'clear')
+	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'clear')
 	list.clear()
 	return interpreter.null_value
 }
 
 @[inline]
 fn set(mut scope Scope) Value {
-	mut list := scope.get_fn_arg[[]Value]('list', 'set')
+	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'set')
 	index := int(scope.get_fn_arg[f64]('index', 'set'))
 	value := scope.get_fn_arg_raw('value', 'set')
-	list[index] = value
+	unsafe {
+		list[index] = value
+	}
 	return interpreter.null_value
 }
 
@@ -71,6 +73,29 @@ fn each(mut scope Scope) Value {
 	for value in list {
 		func.run(mut scope, {
 			func.args[0]: value
+		})
+	}
+
+	return interpreter.null_value
+}
+
+@[inline]
+fn ieach(mut scope Scope) Value {
+	list := scope.get_fn_arg[[]Value]('list', 'ieach')
+	action := scope.get_fn_arg_raw('action', 'ieach')
+
+	func := if action is ValueFunction {
+		IFunctionValue(action)
+	} else if action is ValueNativeFunction {
+		IFunctionValue(action)
+	} else {
+		scope.throw('ieach: action must be a function')
+	}
+
+	for index, value in list {
+		func.run(mut scope, {
+			func.args[0]: f64(index),
+			func.args[1]: value,
 		})
 	}
 
@@ -164,6 +189,11 @@ pub const lists_module = {
 		tracer: 'each'
 		args:   ['list', 'action']
 		code:   each
+	}
+	'ieach':   ValueNativeFunction{
+		tracer: 'ieach'
+		args:   ['list', 'action']
+		code:   ieach
 	}
 	'range':   ValueNativeFunction{
 		tracer: 'range'

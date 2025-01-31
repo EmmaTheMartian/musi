@@ -110,6 +110,13 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			}
 			return null_value
 		}
+		ast.NodeWhile {
+			for s.eval(node.cond) == true_value {
+				mut c := s.make_child('while')
+				c.eval(node.code)
+			}
+			return null_value
+		}
 		ast.NodeUnaryOperator {
 			match node.kind {
 				// .bitwise_not { return Value(f64(int(s.eval(node.left) as f64) ~ int(s.eval(node.right) as f64))) }
@@ -482,6 +489,21 @@ pub fn (s &Scope) get(variable string) ?Value {
 	}
 }
 
+// get_ptr gets a pointer to the value with the provided variable name from this scope OR from parent scopes.
+// see also: get
+@[inline]
+pub fn (s &Scope) get_ptr(variable string) ?&Value {
+	if variable in s.variables {
+		return &(s.variables[variable] or {
+			s.throw('failed to get a variable that... exists? this should never happen, please report this error')
+		})
+	} else if s.parent != unsafe { nil } {
+		return s.parent.get_ptr(variable)
+	} else {
+		return none
+	}
+}
+
 // get_own gets the value with the provided variable name from this scope (disregarding parent scopes).
 // see also: get
 @[inline]
@@ -490,6 +512,19 @@ pub fn (s &Scope) get_own(variable string) ?Value {
 		return s.variables[variable] or {
 			s.throw('uhh, i do not even know what this error would be caused by. just... report it please.')
 		}
+	} else {
+		return none
+	}
+}
+
+// get_own_ptr gets a pointer to the value with the provided variable name from this scope (disregarding parent scopes).
+// see also: get_own
+@[inline]
+pub fn (s &Scope) get_own_ptr(variable string) ?&Value {
+	if variable in s.variables {
+		return &(s.variables[variable] or {
+			s.throw('uhh, i do not even know what this error would be caused by. just... report it please.')
+		})
 	} else {
 		return none
 	}

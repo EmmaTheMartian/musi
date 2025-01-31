@@ -1,70 +1,43 @@
+# `Hello, World!` code pulled from here: (i am quite bad at writing bf... maybe that could be a fun thing to get better at)
 # https://esolangs.org/wiki/Brainfuck#Hello,_World!
 let code = "+++++++++++[>++++++>+++++++++>++++++++>++++>+++>+<<<<<<-]>++++++.>++.+++++++..+++.>>.>-.<<-.<.+++.------.--------.>>>+.>-."
 let code_len = strings.length(code)
 
-let loops = []
-let code_index = 0
-
+let loops = {}
 let stack = []
-let loop_finder = fn do
-	let ch = strings.charat(code, code_index)
-
-	if ch == '[' do
-		stack -> lists.append(code_index)
-	end elseif ch == ']' do
+strings.chars(code) -> lists.ieach(fn index, char do
+	if char == '[' do
+		lists.append(stack, index)
+	end elseif char == ']' do
 		let start = lists.pop(stack)
-		lists.append(loops, {
-			start = start
-			end = code_index
-		})
-		if lists.length(stack) == 0 do
-			return null
-		end
+		tables.set(loops, tostring(start), index)
+		tables.set(loops, tostring(index), start)
+	end
+end)
+
+let cells = lists.listof(10, 0)
+let cellptr = 0
+let codeptr = 0
+
+while codeptr < code_len do
+	let char = strings.charat(code, codeptr)
+
+	if char == '+' do
+		lists.set(cells, cellptr, lists.get(cells, cellptr) + 1)
+	end elseif char == '-' do
+		lists.set(cells, cellptr, lists.get(cells, cellptr) - 1)
+	end elseif char == '>' do
+		cellptr = cellptr + 1
+	end elseif char == '<' do
+		cellptr = cellptr - 1
+	end elseif char == '.' do
+		print(strings.tochar(lists.get(cells, cellptr)))
+	end elseif char == ',' do
+	end elseif char == '[' && lists.get(cells, cellptr) == 0 do
+		codeptr = tables.get(loops, tostring(codeptr))
+	end elseif char == ']' && lists.get(cells, cellptr) != 0 do
+		codeptr = tables.get(loops, tostring(codeptr))
 	end
 
-	code_index = code_index + 1
-	if code_index >= code_len do
-		return null
-	end
-	loop_finder()
+	codeptr = codeptr + 1
 end
-
-let get_loop_index = fn stop_index do
-	let found = null
-	loops -> each(fn it do
-		if it.end == stop_index do
-			found = it.start
-		end
-	end)
-	return found
-end
-
-let tape = listof(1000, 0)
-let tape_index = 0
-code_index = 0
-
-let loop = fn do
-	let ch = strings.charat(code, code_index)
-
-	if ch == '+' do
-		tape -> lists.set(tape_index, lists.get(tape, tape_index) + 1)
-	end elseif ch == '-' do
-		tape -> lists.set(tape_index, lists.get(tape, tape_index) - 1)
-	end elseif ch == '>' do
-		tape_index = tape_index + 1
-	end elseif ch == '<' do
-		tape_index = tape_index - 1
-	end elseif ch == '.' do
-		print(strings.tochar(lists.get(tape, tape_index)))
-	end elseif ch == ',' do
-	end else if ch == '[' && lists.get(tape, tape_index) == 0 do
-		code_index = code_index + 1
-	end else if ch == ']' do
-		tape_index = get_loop_index(code_index)
-	end
-
-
-	code_index = code_index + 1
-	loop()
-end
-loop()

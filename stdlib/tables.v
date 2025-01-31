@@ -45,10 +45,12 @@ fn ipairs(mut scope Scope) Value {
 
 @[inline]
 fn tableset(mut scope Scope) Value {
-	mut table := scope.get_fn_arg[map[string]Value]('table', 'set')
+	mut table := scope.get_fn_arg_ptr[map[string]Value]('table', 'set')
 	key := scope.get_fn_arg[string]('key', 'set')
 	value := scope.get_fn_arg_raw('value', 'set')
-	table[key] = value
+	unsafe {
+		table[key] = value
+	}
 	return interpreter.null_value
 }
 
