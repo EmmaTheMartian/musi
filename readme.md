@@ -1,5 +1,7 @@
 # musi
 
+[getting started](doc/getting-started.md) - [embedding guide](doc/embedding.md)
+
 > noun: game, art
 >
 > adjective: entertaining, artistic, amusing
@@ -30,3 +32,19 @@ so that musi can be added to basically any project, for any purpose!
 honestly, i do not know! i liked the name "musi" and because this language is
 more of a "canvas" for people to use for their own purposes than a
 general-purpose language, i felt like it could work well.
+
+## installation
+
+if you want to install musi for cli usage, you will need to compile from
+source. luckily that is really easy with v:
+
+```sh
+git clone https://github.com/emmathemartian/musi
+cd musi
+#v -prod src/main.v
+v src/main.v
+# executable is at src/main, you can symlink it somewhere on path now if you want:
+ln -s $(pwd)/src/main ~/.local/bin/musi
+```
+
+> compiling with `-prod` causes a c error. i am looking into this!
