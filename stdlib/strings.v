@@ -4,10 +4,27 @@ import interpreter { Scope, Value, ValueNativeFunction }
 import strings
 
 @[inline]
-pub fn repeatstring(mut scope Scope) Value {
+fn repeatstring(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'repeatstring')
 	count := int(scope.get_fn_arg[f64]('count', 'repeatstring'))
-	return Value(strings.repeat_string(str, count))
+	return strings.repeat_string(str, count)
+}
+
+@[inline]
+fn tochar(mut scope Scope) Value {
+	return u8(scope.get_fn_arg[f64]('number', 'tochar')).ascii_str()
+}
+
+@[inline]
+fn charat(mut scope Scope) Value {
+	str := scope.get_fn_arg[string]('string', 'charat')
+	index := int(scope.get_fn_arg[f64]('index', 'charat'))
+	return str[index].ascii_str()
+}
+
+@[inline]
+fn strlength(mut scope Scope) Value {
+	return f64(scope.get_fn_arg[string]('string', 'length').len)
 }
 
 pub const strings_module = {
@@ -16,6 +33,21 @@ pub const strings_module = {
 		args:   ['string', 'count']
 		code:   repeatstring
 	})
+	'tochar':       ValueNativeFunction{
+		tracer: 'tochar'
+		args:   ['number']
+		code:   tochar
+	}
+	'charat':       ValueNativeFunction{
+		tracer: 'charat'
+		args:   ['string', 'index']
+		code:   charat
+	}
+	'length':       ValueNativeFunction{
+		tracer: 'length'
+		args:   ['string']
+		code:   strlength
+	}
 }
 
 // apply_lists applies the `strings` module to the given scope.

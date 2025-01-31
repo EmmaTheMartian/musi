@@ -53,6 +53,9 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		ast.NodeBool {
 			return node.value
 		}
+		ast.NodeNull {
+			return null_value
+		}
 		ast.NodeId {
 			return s.get(node.value) or { s.throw('unknown variable identifier: ${node.value}') }
 		}

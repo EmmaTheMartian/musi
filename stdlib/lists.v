@@ -3,6 +3,59 @@ module stdlib
 import interpreter { IFunctionValue, Scope, Value, ValueFunction, ValueNativeFunction }
 
 @[inline]
+fn append(mut scope Scope) Value {
+	mut list := scope.get_fn_arg[[]Value]('list', 'append')
+	value := scope.get_fn_arg_raw('value', 'append')
+	list << value
+	return interpreter.null_value
+}
+
+@[inline]
+fn prepend(mut scope Scope) Value {
+	mut list := scope.get_fn_arg[[]Value]('list', 'prepend')
+	value := scope.get_fn_arg_raw('value', 'prepend')
+	list.prepend(value)
+	return interpreter.null_value
+}
+
+@[inline]
+fn pop(mut scope Scope) Value {
+	mut list := scope.get_fn_arg[[]Value]('list', 'pop')
+	return list.pop()
+}
+
+@[inline]
+fn delete(mut scope Scope) Value {
+	mut list := scope.get_fn_arg[[]Value]('list', 'delete')
+	index := int(scope.get_fn_arg[f64]('index', 'delete'))
+	list.delete(index)
+	return interpreter.null_value
+}
+
+@[inline]
+fn clear(mut scope Scope) Value {
+	mut list := scope.get_fn_arg[[]Value]('list', 'clear')
+	list.clear()
+	return interpreter.null_value
+}
+
+@[inline]
+fn set(mut scope Scope) Value {
+	mut list := scope.get_fn_arg[[]Value]('list', 'set')
+	index := int(scope.get_fn_arg[f64]('index', 'set'))
+	value := scope.get_fn_arg_raw('value', 'set')
+	list[index] = value
+	return interpreter.null_value
+}
+
+@[inline]
+fn get(mut scope Scope) Value {
+	mut list := scope.get_fn_arg[[]Value]('list', 'get')
+	index := int(scope.get_fn_arg[f64]('index', 'get'))
+	return list[index]
+}
+
+@[inline]
 fn each(mut scope Scope) Value {
 	list := scope.get_fn_arg[[]Value]('list', 'each')
 	action := scope.get_fn_arg_raw('action', 'each')
@@ -32,7 +85,14 @@ fn range(mut scope Scope) Value {
 	for x in from .. to {
 		range[x - from] = Value(f64(x))
 	}
-	return Value(range)
+	return range
+}
+
+@[inline]
+fn listof(mut scope Scope) Value {
+	size := int(scope.get_fn_arg[f64]('size', 'listof'))
+	of := scope.get_fn_arg_raw('of', 'listof')
+	return []Value{len: size, cap: size, init: of}
 }
 
 @[inline]
@@ -45,7 +105,7 @@ fn filter(mut scope Scope) Value {
 			filtered << x
 		}
 	}
-	return Value(filtered)
+	return filtered
 }
 
 @[inline]
@@ -56,29 +116,79 @@ fn map_(mut scope Scope) Value {
 	for x in to_map {
 		mapped << scope.eval_function_list_args(predicate, [x])
 	}
-	return Value(mapped)
+	return mapped
+}
+
+@[inline]
+fn length(mut scope Scope) Value {
+	return f64(scope.get_fn_arg[[]Value]('list', 'length').len)
 }
 
 pub const lists_module = {
-	'each':   Value(ValueNativeFunction{
+	'append':  Value(ValueNativeFunction{
+		tracer: 'append'
+		args:   ['list', 'value']
+		code:   append
+	})
+	'prepend': ValueNativeFunction{
+		tracer: 'prepend'
+		args:   ['list', 'value']
+		code:   prepend
+	}
+	'pop':     ValueNativeFunction{
+		tracer: 'pop'
+		args:   ['list']
+		code:   pop
+	}
+	'delete':  ValueNativeFunction{
+		tracer: 'delete'
+		args:   ['list', 'index']
+		code:   delete
+	}
+	'clear':   ValueNativeFunction{
+		tracer: 'clear'
+		args:   ['list']
+		code:   clear
+	}
+	'set':     ValueNativeFunction{
+		tracer: 'set'
+		args:   ['list', 'index', 'value']
+		code:   set
+	}
+	'get':     ValueNativeFunction{
+		tracer: 'get'
+		args:   ['list', 'index']
+		code:   get
+	}
+	'each':    ValueNativeFunction{
 		tracer: 'each'
 		args:   ['list', 'action']
 		code:   each
-	})
-	'range':  ValueNativeFunction{
+	}
+	'range':   ValueNativeFunction{
 		tracer: 'range'
 		args:   ['from', 'to']
 		code:   range
 	}
-	'filter': ValueNativeFunction{
+	'listof':  ValueNativeFunction{
+		tracer: 'listof'
+		args:   ['size', 'of']
+		code:   listof
+	}
+	'filter':  ValueNativeFunction{
 		tracer: 'filter'
 		args:   ['list', 'predicate']
 		code:   filter
 	}
-	'map':    ValueNativeFunction{
+	'map':     ValueNativeFunction{
 		tracer: 'map'
 		args:   ['list', 'predicate']
 		code:   map_
+	}
+	'length':  ValueNativeFunction{
+		tracer: 'length'
+		args:   ['list']
+		code:   length
 	}
 }
 

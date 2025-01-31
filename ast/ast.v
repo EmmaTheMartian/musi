@@ -84,6 +84,8 @@ pub:
 	value bool
 }
 
+pub struct NodeNull {}
+
 pub struct NodeId implements INode {
 pub:
 	value string

@@ -58,6 +58,7 @@ pub enum TokenKind {
 	str
 	number
 	boolean
+	null
 	operator
 	eof
 }
@@ -184,6 +185,8 @@ pub fn (mut t Tokenizer) tokenize() {
 				t.tokens << Token{.keyword, tok.value, t.line, t.column}
 			} else if tok.value == 'true' || tok.value == 'false' {
 				t.tokens << Token{.boolean, tok.value, t.line, t.column}
+			} else if tok.value == 'null' {
+				t.tokens << Token{.null, '', t.line, t.column}
 			} else {
 				t.tokens << tok
 			}

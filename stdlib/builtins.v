@@ -12,30 +12,30 @@ fn tostring(mut scope Scope) Value {
 	thing := scope.get_fn_arg_raw('thing', 'tostring')
 	match thing {
 		string {
-			return Value(thing)
+			return thing
 		}
 		f64 {
-			return Value(thing.str())
+			return thing.str()
 		}
 		bool {
-			return Value(thing.str())
+			return thing.str()
 		}
 		ValueFunction {
-			return Value(thing.tracer)
+			return thing.tracer
 		}
 		ValueNativeFunction {
-			return Value(thing.tracer)
+			return thing.tracer
 		}
 		[]Value {
-			return Value(thing.str())
+			return thing.str()
 			// return Value('list')
 		}
 		map[string]Value {
-			return Value(thing.str())
+			return thing.str()
 			// return Value('table')
 		}
 		ValueNull {
-			return Value('null')
+			return 'null'
 		}
 	}
 }
@@ -45,10 +45,10 @@ fn tonumber(mut scope Scope) Value {
 	thing := scope.get_fn_arg_raw('thing', 'tonumber')
 	match thing {
 		string {
-			return Value(thing.f64())
+			return thing.f64()
 		}
 		f64 {
-			return Value(thing)
+			return thing
 		}
 		else {
 			scope.throw('tonumber: cannot cast ${typeof(thing).name} to number')
