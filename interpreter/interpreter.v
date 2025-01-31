@@ -7,7 +7,6 @@ import parser
 
 pub struct InterpreterOptions {
 pub mut:
-	use_stdlib    bool = true
 	allow_imports bool = true
 }
 
@@ -19,21 +18,23 @@ pub mut:
 	import_root_path string
 	cached_imports   map[string]Value
 	options          InterpreterOptions
+	// scope_init_fn is called when new scopes are made under the interpreter (only for root_scope and isolated scopes), this is intended to be used to apply the standard library to scopes.
+	scope_init_fn fn (mut Scope) @[required]
 }
 
 // Interpreter.new creates a new interpreter and returns a pointer to it.
 // `root_path` should be the **directory** of the file executed (for example, if executing `./samples/test.musi`, `root_path` would be `./samples/`)
-// `options` contain options for the interpreter, controlling things such as the stdlib and imports.
+// `options` contain options for the interpreter, controlling language permissions (i.e, sandboxes).
+// `scope_init_fn` is a function called on the interpreter's root scope and any isolated scopes made, this is used to apply the stdlib to scopes.
 @[inline]
-pub fn Interpreter.new(root_path string, options InterpreterOptions) &Interpreter {
+pub fn Interpreter.new(root_path string, options InterpreterOptions, scope_init_fn fn (mut Scope)) &Interpreter {
 	mut i := &Interpreter{
 		import_root_path: root_path
 		root_scope:       Scope.new(unsafe { nil }, 'program')
+		scope_init_fn:    scope_init_fn
 	}
 	i.root_scope.interpreter = i
-	if i.options.use_stdlib {
-		apply_builtins(mut i.root_scope)
-	}
+	i.scope_init_fn(mut i.root_scope)
 	return i
 }
 
@@ -50,13 +51,12 @@ pub fn (mut i Interpreter) run(tree &AST) Value {
 }
 
 // run_isolated evaluates the provided AST in the a fresh scope complete detached from the interpreter's root scope and returns the scope's returned value.
-// this is used for importing files.
+// notably, this is used for importing files.
+// `init` is called on the scope after making it and before evaluating, you can use it to add the stdlib.
 @[inline]
 pub fn (mut i Interpreter) run_isolated(tree &AST, tracer string) Value {
 	mut scope := Scope.new(i, tracer)
-	if i.options.use_stdlib {
-		apply_builtins(mut scope)
-	}
+	i.scope_init_fn(mut scope)
 	return scope.eval(&NodeRoot(tree))
 }
 

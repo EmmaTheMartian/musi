@@ -45,6 +45,7 @@ pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value) Value {
 pub struct ValueNull {}
 
 pub type Value = string
+	//| i64 // TODO
 	| f64
 	| bool
 	| ValueFunction

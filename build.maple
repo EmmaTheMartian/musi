@@ -2,16 +2,39 @@ plugins = [ 'v' ]
 
 config:v_main = 'src/main.v'
 
-config:sources = 'ast/ interpreter/ parser/ src/ tokenizer/ musi.v'
+config:musi_flags = '-syntax-debug'
+
+config:sources = 'ast/ interpreter/ parser/ src/ stdlib/ tokenizer/ musi.v'
+
+task:test.sample = {
+	help = 'Tests a specific sample'
+	category = 'test'
+	run = '${v} -g run ${v_main} run ${musi_flags} samples/${args}.musi'
+}
+
+task:test.samples = {
+	help = 'Tests each sample'
+	category = 'test'
+	run = [
+		'${v} -g run ${v_main} run ${musi_flags} samples/hello.musi',
+		'${v} -g run ${v_main} run ${musi_flags} samples/fib.musi'
+	]
+}
 
 task:vet = {
-	help = 'runs vvet on all of musi. this exists primarily for gitpod instances, where the v/ directory exist which we should ignore from vvet'
+	help = 'Runs vvet on all of musi. this exists primarily for gitpod instances, where the v/ directory exist which we should ignore from vvet'
 	category = 'misc'
 	run = '${v} vet -FIpr ${sources}'
 }
 
 task:fmt = {
-	help = 'runs vfmt on all of musi. this exists primarily for gitpod instances, where the v/ directory exist which we should ignore from vfmt'
+	help = 'Runs vfmt on all of musi. this exists primarily for gitpod instances, where the v/ directory exist which we should ignore from vfmt'
 	category = 'misc'
 	run = '${v} fmt -w ${sources}'
+}
+
+task:cloc = {
+	help = 'Count lines of code'
+	category = 'misc'
+	run = 'cloc ${sources}'
 }

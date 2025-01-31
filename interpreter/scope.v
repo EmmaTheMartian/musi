@@ -149,6 +149,26 @@ pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value 
 	}
 }
 
+// eval_function_list_args evaluates the provided function value with the provided args, then returns the function's returned value.
+// see also: invoke
+pub fn (mut s Scope) eval_function_list_args(function Value, args []Value) Value {
+	if function is ValueFunction {
+		mut func_args := map[string]Value{}
+		for i, value in args {
+			func_args[function.args[i]] = value
+		}
+		return function.run(mut s, func_args)
+	} else if function is ValueNativeFunction {
+		mut func_args := map[string]Value{}
+		for i, value in args {
+			func_args[function.args[i]] = value
+		}
+		return function.run(mut s, func_args)
+	} else {
+		s.throw('attempted to invoke non-function: ${function}')
+	}
+}
+
 // invoke invokes the function with the provided name using the provided args, then returns the function's returned value.
 // see also: eval_function
 @[inline]
@@ -158,6 +178,28 @@ pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
 		return variable.run(mut s, args)
 	} else if variable is ValueNativeFunction {
 		return variable.run(mut s, args)
+	} else {
+		s.throw('attempted to invoke non-function: ${func}')
+	}
+}
+
+// invoke_list invokes the function with the provided name using the provided args, then returns the function's returned value.
+// see also: invoke
+@[inline]
+pub fn (mut s Scope) invoke_list(func string, args []Value) Value {
+	variable := s.get(func) or { s.throw('cannot invoke non-existent function `${func}`') }
+	if variable is ValueFunction {
+		mut func_args := map[string]Value{}
+		for i, value in args {
+			func_args[variable.args[i]] = value
+		}
+		return variable.run(mut s, func_args)
+	} else if variable is ValueNativeFunction {
+		mut func_args := map[string]Value{}
+		for i, value in args {
+			func_args[variable.args[i]] = value
+		}
+		return variable.run(mut s, func_args)
 	} else {
 		s.throw('attempted to invoke non-function: ${func}')
 	}
@@ -257,9 +299,15 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 	s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 }
 
+@[params]
+pub struct EvalDotsParams {
+pub:
+	pipe_in ?Value
+}
+
 // eval_dots evaluates a series of nested dot operators, invoking the last one if it is an `ast.NodeInvoke`.
 @[inline]
-fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
+fn (mut s Scope) eval_dots(node &ast.NodeOperator, params EvalDotsParams) Value {
 	left := s.eval(node.left)
 
 	name := if node.right is ast.NodeId {
@@ -279,8 +327,18 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator) Value {
 			} else {
 				s.throw('cannot get function `${node.right.func}` on right side of dot operator (.)')
 			}
-			args := s.eval_function_args(variable, node.right)
-			return s.eval_function(variable, args)
+			if params.pipe_in != none {
+				mut args := []Value{}
+				args << params.pipe_in
+				for arg in node.right.args {
+					args << s.eval(arg)
+				}
+				// println('pipe_in args: ${args}')
+				return s.eval_function_list_args(variable, args)
+			} else {
+				args := s.eval_function_args(variable, node.right)
+				return s.eval_function(variable, args)
+			}
 		}
 		s.throw('cannot use dot operator (.) on object `${left}`')
 	} else {
@@ -335,9 +393,13 @@ pub fn (mut s Scope) set_nested(dots []string, value Value) {
 // pipe pipes the given value (`to_pipe`) into `pipe_into`, invoking it with `to_pipe` as the first argument.
 @[inline]
 fn (mut s Scope) pipe(to_pipe Value, pipe_into &INode) Value {
-	if pipe_into is ast.NodeOperator && pipe_into.kind == .pipe {
-		// if we are piping into a pipe, we should evaluate the left expression, then pass that into the next
-		return s.pipe(s.pipe(to_pipe, pipe_into.left), pipe_into.right)
+	if pipe_into is ast.NodeOperator {
+		if pipe_into.kind == .pipe {
+			// if we are piping into a pipe, we should evaluate the left expression, then pass that into the next
+			return s.pipe(s.pipe(to_pipe, pipe_into.left), pipe_into.right)
+		} else if pipe_into.kind == .dot {
+			return s.eval_dots(pipe_into, pipe_in: to_pipe)
+		}
 	}
 
 	if pipe_into !is ast.NodeInvoke {

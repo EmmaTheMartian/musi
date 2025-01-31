@@ -6,37 +6,38 @@ import tokenizer { Token, TokenKind }
 // operators where nested operators should be given to the leftmost operator instead of the rightmost.
 // nodes excluded from this list resolve as: 1 + 2 + 3 resolves to add(1, add(2, 3))
 // nodes in this list resolve as: 1 + 2 + 3 resolves to add(add(1, 2), 3)
-const operators_with_left_priority = [
-	ast.Operator.assign,
-	ast.Operator.dot,
-]
+// const operators_with_left_priority = [
+// 	// ast.Operator.assign,
+// 	// ast.Operator.dot,
+// ]
+const operators_with_left_priority = []ast.Operator{}
 
 // same as
 // https://en.cppreference.com/w/c/language/operator_precedence
 const operator_precedence = {
-	ast.Operator.dot: 0
-	.pipe:            1
-	.unary_not:       2
-	.bit_not:         2
-	.div:             3
-	.mul:             3
-	.mod:             3
-	.add:             4
-	.sub:             4
-	.shift_right:     5
-	.shift_left:      5
-	.gteq:            6
-	.lteq:            6
-	.gt:              6
-	.lt:              6
-	.eq:              7
-	.neq:             7
-	.bit_and:         8
-	.bit_xor:         9
-	.bit_or:          10
-	.and:             11
-	.or:              12
-	.assign:          14
+	ast.Operator.dot:  0
+	ast.Operator.pipe: 1
+	.unary_not:        2
+	.bit_not:          2
+	.div:              3
+	.mul:              3
+	.mod:              3
+	.add:              4
+	.sub:              4
+	.shift_right:      5
+	.shift_left:       5
+	.gteq:             6
+	.lteq:             6
+	.gt:               6
+	.lt:               6
+	.eq:               7
+	.neq:              7
+	.bit_and:          8
+	.bit_xor:          9
+	.bit_or:           10
+	.and:              11
+	.or:               12
+	.assign:           14
 }
 
 pub struct Parser {

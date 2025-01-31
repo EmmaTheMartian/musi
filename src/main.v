@@ -6,6 +6,7 @@ import v.vmod
 import tokenizer
 import parser
 import interpreter
+import stdlib
 
 fn main() {
 	mod := vmod.decode(@VMOD_FILE)!
@@ -54,9 +55,16 @@ fn main() {
 
 			println('directory of input file: ${os.dir(input_file)}')
 
-			mut i := interpreter.Interpreter.new(os.dir(input_file), interpreter.InterpreterOptions{
-				use_stdlib: !c.flags.get_bool('no-std')!
-			})
+			root_import_dir := os.dir(input_file)
+			opts := interpreter.InterpreterOptions{}
+			use_stdlib := !c.flags.get_bool('no-std')!
+			scope_init_fn := fn [use_stdlib] (mut scope interpreter.Scope) {
+				if use_stdlib {
+					stdlib.apply_stdlib(mut scope)
+				}
+			}
+
+			mut i := interpreter.Interpreter.new(root_import_dir, opts, scope_init_fn)
 			file_return_value := i.run(ast)
 
 			if file_return_value != interpreter.null_value {
