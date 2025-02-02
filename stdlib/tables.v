@@ -5,13 +5,13 @@ import interpreter { Scope, Value, ValueNativeFunction }
 @[inline]
 fn keys(mut scope Scope) Value {
 	table := scope.get_fn_arg[map[string]Value]('table', 'keys')
-	return Value(table.keys().map(|it| Value(it)))
+	return table.keys().map(|it| Value(it))
 }
 
 @[inline]
 fn values(mut scope Scope) Value {
 	table := scope.get_fn_arg[map[string]Value]('table', 'values')
-	return Value(table.values())
+	return table.values()
 }
 
 @[inline]
@@ -24,7 +24,7 @@ fn pairs(mut scope Scope) Value {
 			'value': value
 		}
 	}
-	return Value(pairs)
+	return pairs
 }
 
 @[inline]
@@ -40,7 +40,25 @@ fn ipairs(mut scope Scope) Value {
 		}
 		i++
 	}
-	return Value(pairs)
+	return pairs
+}
+
+@[inline]
+fn tableset(mut scope Scope) Value {
+	mut table := scope.get_fn_arg_ptr[map[string]Value]('table', 'set')
+	key := scope.get_fn_arg[string]('key', 'set')
+	value := scope.get_fn_arg_raw('value', 'set')
+	unsafe {
+		table[key] = value
+	}
+	return interpreter.null_value
+}
+
+@[inline]
+fn tableget(mut scope Scope) Value {
+	mut table := scope.get_fn_arg[map[string]Value]('table', 'get')
+	key := scope.get_fn_arg[string]('key', 'get')
+	return table[key] or { scope.throw('failed to index table with key `${key}`') }
 }
 
 pub const tables_module = {
@@ -63,6 +81,16 @@ pub const tables_module = {
 		tracer: 'ipairs'
 		args:   ['table']
 		code:   ipairs
+	}
+	'set':    ValueNativeFunction{
+		tracer: 'set'
+		args:   ['table', 'key', 'value']
+		code:   tableset
+	}
+	'get':    ValueNativeFunction{
+		tracer: 'get'
+		args:   ['table', 'key']
+		code:   tableget
 	}
 }
 

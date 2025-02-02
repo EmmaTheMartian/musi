@@ -1,0 +1,43 @@
+# `Hello, World!` code pulled from here: (i am quite bad at writing bf... maybe that could be a fun thing to get better at)
+# https://esolangs.org/wiki/Brainfuck#Hello,_World!
+let code = "+++++++++++[>++++++>+++++++++>++++++++>++++>+++>+<<<<<<-]>++++++.>++.+++++++..+++.>>.>-.<<-.<.+++.------.--------.>>>+.>-."
+let code_len = strings.length(code)
+
+let loops = {}
+let stack = []
+strings.chars(code) -> lists.ieach(fn index, char do
+	if char == '[' do
+		lists.append(stack, index)
+	end elseif char == ']' do
+		let start = lists.pop(stack)
+		tables.set(loops, tostring(start), index)
+		tables.set(loops, tostring(index), start)
+	end
+end)
+
+let cells = lists.listof(10, 0)
+let cellptr = 0
+let codeptr = 0
+
+while codeptr < code_len do
+	let char = strings.charat(code, codeptr)
+
+	if char == '+' do
+		lists.set(cells, cellptr, lists.get(cells, cellptr) + 1)
+	end elseif char == '-' do
+		lists.set(cells, cellptr, lists.get(cells, cellptr) - 1)
+	end elseif char == '>' do
+		cellptr = cellptr + 1
+	end elseif char == '<' do
+		cellptr = cellptr - 1
+	end elseif char == '.' do
+		print(strings.tochar(lists.get(cells, cellptr)))
+	end elseif char == ',' do
+	end elseif char == '[' && lists.get(cells, cellptr) == 0 do
+		codeptr = tables.get(loops, tostring(codeptr))
+	end elseif char == ']' && lists.get(cells, cellptr) != 0 do
+		codeptr = tables.get(loops, tostring(codeptr))
+	end
+
+	codeptr = codeptr + 1
+end

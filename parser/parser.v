@@ -15,34 +15,35 @@ const operators_with_left_priority = []ast.Operator{}
 // same as
 // https://en.cppreference.com/w/c/language/operator_precedence
 const operator_precedence = {
-	ast.Operator.dot:  0
-	ast.Operator.pipe: 1
-	.unary_not:        2
-	.bit_not:          2
-	.div:              3
-	.mul:              3
-	.mod:              3
-	.add:              4
-	.sub:              4
-	.shift_right:      5
-	.shift_left:       5
-	.gteq:             6
-	.lteq:             6
-	.gt:               6
-	.lt:               6
-	.eq:               7
-	.neq:              7
-	.bit_and:          8
-	.bit_xor:          9
-	.bit_or:           10
-	.and:              11
-	.or:               12
-	.assign:           14
+	ast.Operator.dot: 0
+	.pipe:            1
+	.unary_not:       2
+	.bit_not:         2
+	.div:             3
+	.mul:             3
+	.mod:             3
+	.add:             4
+	.sub:             4
+	.shift_right:     5
+	.shift_left:      5
+	.gteq:            6
+	.lteq:            6
+	.gt:              6
+	.lt:              6
+	.eq:              7
+	.neq:             7
+	.bit_and:         8
+	.bit_xor:         9
+	.bit_or:          10
+	.and:             11
+	.or:              12
+	.assign:          14
 }
 
 pub struct Parser {
 pub mut:
 	index  int
+pub:
 	tokens []Token
 }
 
@@ -50,7 +51,10 @@ pub mut:
 @[noreturn]
 pub fn (p &Parser) throw(msg string) {
 	if p.index >= p.tokens.len {
-		panic('musi: parser @ token #${p.index}/${p.tokens.len}: ${msg}')
+		$if debug {
+			println(p.tokens)
+		}
+		panic('musi: parser @ token #${p.index}/${p.tokens.len}: ${msg} (last token: ${p.tokens.last()})')
 	}
 	panic('musi: parser @ ${p.peek().line}:${p.peek().column}: ${msg}')
 }
@@ -374,6 +378,18 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 	return ast.NodeIf{chain}
 }
 
+// parse_while parses tokens expecting to build an `ast.NodeWhile`.
+// the current node must be the token *after* an `while` keyword.
+@[inline]
+pub fn (mut p Parser) parse_while() ast.NodeWhile {
+	p.expect_n(.keyword, 'while', -1)
+	cond := p.parse_single() or {
+		p.throw('expected expression after `while` keyword.')
+	}
+	code := p.parse_block()
+	return ast.NodeWhile{cond, code}
+}
+
 @[params]
 pub struct ParseSingleParams {
 pub:
@@ -403,6 +419,8 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 				node = p.parse_return()
 			} else if token.value == 'if' {
 				node = p.parse_if()
+			} else if token.value == 'while' {
+				node = p.parse_while()
 			}
 		}
 		.literal {
@@ -420,6 +438,9 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 		}
 		.boolean {
 			node = ast.NodeBool{token.value == 'true'}
+		}
+		.null {
+			node = ast.NodeNull{}
 		}
 		.operator {
 			if token.value == '!' {

@@ -19,6 +19,7 @@ pub const keywords = [
 	'else',
 	'let',
 	'return',
+	'while',
 ]
 pub const operators = [
 	// comparison
@@ -58,6 +59,7 @@ pub enum TokenKind {
 	str
 	number
 	boolean
+	null
 	operator
 	eof
 }
@@ -74,7 +76,7 @@ pub struct Tokenizer {
 	TextScanner
 pub mut:
 	line   int = 1
-	column int
+	column int = 1
 	tokens []Token
 }
 
@@ -94,7 +96,7 @@ fn (mut t Tokenizer) next_str(quote_kind u8) Token {
 			t.throw('reached EOF before string termination')
 		} else if ch == `\n` {
 			t.line++
-			t.column = 0
+			t.column = 1
 		} else if ch == quote_kind && t.peek_n(-1) != `\\` {
 			// todo: escape sequences
 			return Token{.str, buffer.str(), t.line, t.column}
@@ -163,7 +165,7 @@ pub fn (mut t Tokenizer) tokenize() {
 		} else if whitespace.contains_u8(u8(ch)) {
 			if ch == `\n` {
 				t.line++
-				t.column = 0
+				t.column = 1
 			}
 		} else if ch == `'` {
 			t.tokens << t.next_str(u8(ch))
@@ -184,6 +186,8 @@ pub fn (mut t Tokenizer) tokenize() {
 				t.tokens << Token{.keyword, tok.value, t.line, t.column}
 			} else if tok.value == 'true' || tok.value == 'false' {
 				t.tokens << Token{.boolean, tok.value, t.line, t.column}
+			} else if tok.value == 'null' {
+				t.tokens << Token{.null, '', t.line, t.column}
 			} else {
 				t.tokens << tok
 			}
@@ -192,6 +196,8 @@ pub fn (mut t Tokenizer) tokenize() {
 			for ch != `\n` {
 				ch = t.next()
 			}
+			t.line++
+			t.column = 1
 		} else {
 			t.throw('unexpected character: ${u8(ch).ascii_str()} (${ch}) at ${t.line}:${t.column}')
 		}

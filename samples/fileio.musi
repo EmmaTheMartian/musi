@@ -1,0 +1,18 @@
+let file = null
+let text = null
+
+if !files.exists('test.txt') do
+	println('creating test.txt')
+	let f = files.create('test.txt')
+	f -> files.write('Hello, World!')
+	f -> files.close()
+end
+
+println('reading test.txt')
+file = files.open('test.txt')
+
+files.setcursorpos(file, 0)
+text = files.read(file, files.size(file))
+fprintln('text: %', [text])
+
+files.close(file)

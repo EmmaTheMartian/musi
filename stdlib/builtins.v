@@ -12,31 +12,32 @@ fn tostring(mut scope Scope) Value {
 	thing := scope.get_fn_arg_raw('thing', 'tostring')
 	match thing {
 		string {
-			return Value(thing)
+			return thing
 		}
 		f64 {
-			return Value(thing.str())
+			return thing.str()
 		}
 		bool {
-			return Value(thing.str())
+			return thing.str()
 		}
 		ValueFunction {
-			return Value(thing.tracer)
+			return thing.tracer
 		}
 		ValueNativeFunction {
-			return Value(thing.tracer)
+			return thing.tracer
 		}
 		[]Value {
-			return Value(thing.str())
+			return thing.str()
 			// return Value('list')
 		}
 		map[string]Value {
-			return Value(thing.str())
+			return thing.str()
 			// return Value('table')
 		}
 		ValueNull {
-			return Value('null')
+			return 'null'
 		}
+		voidptr { return 'voidptr' }
 	}
 }
 
@@ -45,10 +46,10 @@ fn tonumber(mut scope Scope) Value {
 	thing := scope.get_fn_arg_raw('thing', 'tonumber')
 	match thing {
 		string {
-			return Value(thing.f64())
+			return thing.f64()
 		}
 		f64 {
-			return Value(thing)
+			return thing
 		}
 		else {
 			scope.throw('tonumber: cannot cast ${typeof(thing).name} to number')
@@ -67,6 +68,7 @@ fn typeof_(mut scope Scope) Value {
 		[]Value { 'list' }
 		map[string]Value { 'table' }
 		ValueNull { 'null' }
+		voidptr { 'voidptr' }
 	}
 }
 
@@ -85,6 +87,32 @@ fn println_(mut scope Scope) Value {
 	println(scope.invoke('tostring', {
 		'thing': text
 	}) as string)
+	return interpreter.null_value
+}
+
+@[inline]
+fn fprint_(mut scope Scope) Value {
+	text := scope.get_fn_arg[string]('text', 'fprint')
+	values := scope.get_fn_arg[[]Value]('values', 'fprint')
+	func := (scope.get('strings') or {
+		scope.throw('fprintln requires the `strings` module, but it is not present.')
+	} as map[string]Value)['format'] or {
+		scope.throw('fprintln: could not find `strings.format`')
+	}
+	print(scope.eval_function(func, {'string': text, 'values': values }) as string)
+	return interpreter.null_value
+}
+
+@[inline]
+fn fprintln_(mut scope Scope) Value {
+	text := scope.get_fn_arg[string]('text', 'fprintln')
+	values := scope.get_fn_arg[[]Value]('values', 'fprintln')
+	func := (scope.get('strings') or {
+		scope.throw('fprintln requires the `strings` module, but it is not present.')
+	} as map[string]Value)['format'] or {
+		scope.throw('fprintln: could not find `strings.format`')
+	}
+	println(scope.eval_function(func, {'string': text, 'values': values }) as string)
 	return interpreter.null_value
 }
 
@@ -127,6 +155,16 @@ pub const builtins = {
 		tracer: 'println'
 		args:   ['text']
 		code:   println_
+	}
+	'fprint':    ValueNativeFunction{
+		tracer: 'fprint'
+		args:   ['text', 'values']
+		code:   fprint_
+	}
+	'fprintln':  ValueNativeFunction{
+		tracer: 'fprintln'
+		args:   ['text', 'values']
+		code:   fprintln_
 	}
 	'panic':    ValueNativeFunction{
 		tracer: 'panic'

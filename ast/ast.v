@@ -84,6 +84,8 @@ pub:
 	value bool
 }
 
+pub struct NodeNull {}
+
 pub struct NodeId implements INode {
 pub:
 	value string
@@ -124,6 +126,12 @@ pub:
 pub struct NodeIf implements INode {
 pub:
 	chain []IfChainElement
+}
+
+pub struct NodeWhile implements INode {
+pub:
+	cond INode
+	code NodeBlock
 }
 
 pub struct NodeEOF {}

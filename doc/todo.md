@@ -8,6 +8,8 @@
 ## planning
 
 - drastically improve error messages
+- list index operator
+- repl
 
 ## ideas
 
