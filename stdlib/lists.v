@@ -149,6 +149,11 @@ fn length(mut scope Scope) Value {
 	return f64(scope.get_fn_arg[[]Value]('list', 'length').len)
 }
 
+@[inline]
+fn reversed(mut scope Scope) Value {
+	return scope.get_fn_arg[[]Value]('list', 'reversed').reverse()
+}
+
 pub const lists_module = {
 	'append':  Value(ValueNativeFunction{
 		tracer: 'append'
@@ -219,6 +224,11 @@ pub const lists_module = {
 		tracer: 'length'
 		args:   ['list']
 		code:   length
+	}
+	'revsersed':  ValueNativeFunction{
+		tracer: 'reversed'
+		args:   ['list']
+		code:   reversed
 	}
 }
 

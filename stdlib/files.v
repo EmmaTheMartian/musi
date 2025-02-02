@@ -1,57 +1,20 @@
 module stdlib
 
-import interpreter { IFunctionValue, Scope, Value, ValueFunction, ValueNativeFunction }
+import interpreter { Scope, Value, ValueNativeFunction }
 import os
-
-struct FileHandler {
-mut:
-	files map[u64]os.File
-	next  u64
-}
-
-@[inline]
-fn (mut fh FileHandler) open(scope &Scope, path string, mode string) u64 {
-	if !os.exists(path) {
-		scope.throw('open: file does not exist: `${path}`')
-	}
-	it := os.open_file(path, mode) or {
-		scope.throw('failed to open file `${path}`')
-	}
-	fh.files[fh.next] = it
-	$if debug {
-		println('(debug) file_handler opened `${path}`@${fh.next}: ${it}')
-	}
-	fh.next++
-	return fh.next - 1
-}
-
-@[inline]
-fn (mut fh FileHandler) create(scope &Scope, path string) u64 {
-	it := os.create(path) or {
-		scope.throw('failed to create file `${path}`')
-	}
-	fh.files[fh.next] = it
-	$if debug {
-		println('(debug) file_handler created `${path}`@${fh.next}: ${it}')
-	}
-	fh.next++
-	return fh.next - 1
-}
-
-__global file_handler = FileHandler{}
 
 @[inline]
 fn open(mut scope Scope) Value {
 	path := scope.get_fn_arg[string]('path', 'open')
-	mode := scope.get_fn_arg[string]('mode', 'open')
-	// TODO: change to `u64` when i add that to `Value`
-	return f64(file_handler.open(scope, path, mode))
+	it := os.open(path) or { scope.throw('open: file does not exist: `${path}`') }
+	return Value(voidptr(&it))
 }
 
 @[inline]
 fn create(mut scope Scope) Value {
-	// TODO: change to `u64` when i add that to `Value`
-	return f64(file_handler.create(scope, scope.get_fn_arg[string]('path', 'create')))
+	path := scope.get_fn_arg[string]('path', 'create')
+	it := os.create(path) or { scope.throw('create: filaed to create file: `${path}`') }
+	return Value(voidptr(&it))
 }
 
 @[inline]
@@ -61,78 +24,131 @@ fn exists(mut scope Scope) Value {
 
 @[inline]
 fn close(mut scope Scope) Value {
-	mut file := file_handler.files[u64(scope.get_fn_arg[f64]('file', 'close'))] or {
-		scope.throw('file pointer no longer exists.')
-	}
+	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'close')) }
 	file.close()
 	return interpreter.null_value
 }
 
 @[inline]
 fn write(mut scope Scope) Value {
-	mut file := file_handler.files[u64(scope.get_fn_arg[f64]('file', 'write'))] or {
-		scope.throw('file pointer no longer exists.')
-	}
+	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'write')) }
 	data := scope.get_fn_arg[string]('data', 'write')
-	file.write_string(data) or {
-		scope.throw('failed to write string to file. (v error: ${err})')
-	}
+	file.write_string(data) or { scope.throw('failed to write string to file. (v error: ${err})') }
+	return interpreter.null_value
+}
+
+@[inline]
+fn flush(mut scope Scope) Value {
+	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'flush')) }
+	file.flush()
+	return interpreter.null_value
+}
+
+@[inline]
+fn getcursorpos(mut scope Scope) Value {
+	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'getcursorpos')) }
+	return f64(file.tell() or { panic(err) })
+}
+
+@[inline]
+fn setcursorpos(mut scope Scope) Value {
+	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'setcursorpos')) }
+	pos := int(scope.get_fn_arg[f64]('pos', 'setcursorpos'))
+	file.seek(pos, .start) or { panic(err) }
+	return interpreter.null_value
+}
+
+@[inline]
+fn offsetcursorpos(mut scope Scope) Value {
+	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'setcursorpos')) }
+	pos := int(scope.get_fn_arg[f64]('pos', 'setcursorpos'))
+	file.seek(pos, .current) or { panic(err) }
 	return interpreter.null_value
 }
 
 @[inline]
 fn read(mut scope Scope) Value {
-	file := file_handler.files[u64(scope.get_fn_arg[f64]('file', 'read'))] or {
-		scope.throw('file pointer no longer exists.')
-	}
+	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'read')) }
 	bytes := int(scope.get_fn_arg[f64]('bytes', 'read'))
 	return file.read_bytes(bytes).bytestr()
 }
 
 @[inline]
-fn filesize(mut scope Scope) Value {
-	path := scope.get_fn_arg[string]('path', 'size')
-	if !os.exists(path) {
-		scope.throw('size: file does not exist: `${path}`')
+fn size(mut scope Scope) Value {
+	of := scope.get_fn_arg_raw('of', 'size')
+	if of is string {
+		if !os.exists(of) {
+			scope.throw('size: file does not exist: `${of}`')
+		}
+		return f64(os.file_size(of))
+	} else if of is voidptr {
+		mut file := unsafe { &os.File(of) }
+		// calculate size of file
+		start := file.tell() or { panic(err) }
+		file.seek(0, .end) or { panic(err) }
+		size := file.tell() or { panic(err) }
+		file.seek(start, .start) or { panic(err) }
+		return f64(size)
+	} else {
+		scope.throw('size: argument `of` mustbe a string or voidptr.')
 	}
-	return f64(os.file_size(path))
 }
 
-pub const files_module ={
-	'open': Value(ValueNativeFunction{
+pub const files_module = {
+	'open':            Value(ValueNativeFunction{
 		tracer: 'open'
-		args: ['path', 'mode']
-		code: open
+		args:   ['path']
+		code:   open
 	})
-	'create': ValueNativeFunction{
+	'create':          ValueNativeFunction{
 		tracer: 'create'
-		args: ['path']
-		code: create
+		args:   ['path']
+		code:   create
 	}
-	'exists': ValueNativeFunction{
+	'exists':          ValueNativeFunction{
 		tracer: 'exists'
-		args: ['path']
-		code: exists
+		args:   ['path']
+		code:   exists
 	}
-	'close': ValueNativeFunction{
+	'close':           ValueNativeFunction{
 		tracer: 'close'
-		args: ['file']
-		code: close
+		args:   ['file']
+		code:   close
 	}
-	'write': ValueNativeFunction{
+	'write':           ValueNativeFunction{
 		tracer: 'write'
-		args: ['file', 'data']
-		code: write
+		args:   ['file', 'data']
+		code:   write
 	}
-	'read': ValueNativeFunction{
+	'flush':           ValueNativeFunction{
+		tracer: 'flush'
+		args:   ['file']
+		code:   flush
+	}
+	'getcursorpos':    ValueNativeFunction{
+		tracer: 'getcursorpos'
+		args:   ['file']
+		code:   getcursorpos
+	}
+	'setcursorpos':    ValueNativeFunction{
+		tracer: 'setcursorpos'
+		args:   ['file', 'pos']
+		code:   setcursorpos
+	}
+	'offsetcursorpos': ValueNativeFunction{
+		tracer: 'offsetcursorpos'
+		args:   ['file', 'pos']
+		code:   offsetcursorpos
+	}
+	'read':            ValueNativeFunction{
 		tracer: 'read'
-		args: ['file', 'bytes']
-		code: read
+		args:   ['file', 'bytes']
+		code:   read
 	}
-	'size': ValueNativeFunction{
+	'size':            ValueNativeFunction{
 		tracer: 'size'
-		args: ['path']
-		code: filesize
+		args:   ['of']
+		code:   size
 	}
 }
 

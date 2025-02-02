@@ -91,6 +91,32 @@ fn println_(mut scope Scope) Value {
 }
 
 @[inline]
+fn fprint_(mut scope Scope) Value {
+	text := scope.get_fn_arg[string]('text', 'fprint')
+	values := scope.get_fn_arg[[]Value]('values', 'fprint')
+	func := (scope.get('strings') or {
+		scope.throw('fprintln requires the `strings` module, but it is not present.')
+	} as map[string]Value)['format'] or {
+		scope.throw('fprintln: could not find `strings.format`')
+	}
+	print(scope.eval_function(func, {'string': text, 'values': values }) as string)
+	return interpreter.null_value
+}
+
+@[inline]
+fn fprintln_(mut scope Scope) Value {
+	text := scope.get_fn_arg[string]('text', 'fprintln')
+	values := scope.get_fn_arg[[]Value]('values', 'fprintln')
+	func := (scope.get('strings') or {
+		scope.throw('fprintln requires the `strings` module, but it is not present.')
+	} as map[string]Value)['format'] or {
+		scope.throw('fprintln: could not find `strings.format`')
+	}
+	println(scope.eval_function(func, {'string': text, 'values': values }) as string)
+	return interpreter.null_value
+}
+
+@[inline]
 fn panic_(mut scope Scope) Value {
 	text := scope.get_fn_arg_raw('text', 'panic')
 	scope.throw(scope.invoke('tostring', {
@@ -129,6 +155,16 @@ pub const builtins = {
 		tracer: 'println'
 		args:   ['text']
 		code:   println_
+	}
+	'fprint':    ValueNativeFunction{
+		tracer: 'fprint'
+		args:   ['text', 'values']
+		code:   fprint_
+	}
+	'fprintln':  ValueNativeFunction{
+		tracer: 'fprintln'
+		args:   ['text', 'values']
+		code:   fprintln_
 	}
 	'panic':    ValueNativeFunction{
 		tracer: 'panic'

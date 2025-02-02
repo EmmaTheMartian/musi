@@ -1,20 +1,18 @@
 let file = null
 let text = null
-if files.exists('test.txt') do
-	file = files.open('test.txt', 'r')
-end else do
-	file = files.create('test.txt')
-	files.write(file, 'Hello, World!')
-	# we close and reopen the file so that its file size is updated
-	files.close(file)
-	file = files.open('text.txt', 'r')
+
+if !files.exists('test.txt') do
+	println('creating test.txt')
+	let f = files.create('test.txt')
+	f -> files.write('Hello, World!')
+	f -> files.close()
 end
 
-print('index in global file handler: ')
-println(file)
+println('reading test.txt')
+file = files.open('test.txt')
 
-text = files.read(file, files.size('test.txt'))
-print('text: ')
-println(text)
+files.setcursorpos(file, 0)
+text = files.read(file, files.size(file))
+fprintln('text: %', [text])
 
 files.close(file)
