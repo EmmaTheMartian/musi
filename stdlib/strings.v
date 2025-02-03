@@ -138,12 +138,12 @@ pub const strings_module = {
 	}
 	'replace':       ValueNativeFunction{
 		tracer: 'replace'
-		args:   ['string', 'substring']
+		args:   ['string', 'substring', 'with']
 		code:   replace
 	}
 	'replaceonce':       ValueNativeFunction{
 		tracer: 'replaceonce'
-		args:   ['string', 'substring']
+		args:   ['string', 'substring', 'with']
 		code:   replaceonce
 	}
 	'replaceeach':       ValueNativeFunction{
