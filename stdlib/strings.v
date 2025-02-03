@@ -59,14 +59,16 @@ fn findall(mut scope Scope) Value {
 pub fn replace(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replace').str()
 	substr := scope.get_fn_arg[string]('substring', 'replace')
-	return str.replace(str, substr)
+	with := scope.get_fn_arg[string]('with', 'replace')
+	return str.replace(substr, with)
 }
 
 @[inline]
 pub fn replaceonce(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replaceonce').str()
 	substr := scope.get_fn_arg[string]('substring', 'replaceonce')
-	return str.replace_once(str, substr)
+	with := scope.get_fn_arg[string]('with', 'replaceonce')
+	return str.replace_once(substr, with)
 }
 
 @[inline]

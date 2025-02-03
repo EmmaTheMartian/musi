@@ -13,7 +13,7 @@
 
 ## ideas
 
-- for/while loops
+- for loops
 - coroutines/threading/async/etc
 	```musi
 	let threading = import(":threading")
