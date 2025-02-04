@@ -100,55 +100,57 @@ pub fn format(mut scope Scope) Value {
 	mut str := scope.get_fn_arg[string]('string', 'format').str()
 	values := scope.get_fn_arg[[]Value]('values', 'format')
 	for value in values {
-		str = str.replace_once('%', scope.invoke('tostring', {'thing': value}) as string)
+		str = str.replace_once('%', scope.invoke('tostring', {
+			'thing': value
+		}) as string)
 	}
 	return str
 }
 
 pub const strings_module = {
-	'repeatstring': Value(ValueNativeFunction{
-		args:   ['string', 'count']
-		code:   repeatstring
+	'repeatstring':    Value(ValueNativeFunction{
+		args: ['string', 'count']
+		code: repeatstring
 	})
-	'tochar':       ValueNativeFunction{
-		args:   ['number']
-		code:   tochar
+	'tochar':          ValueNativeFunction{
+		args: ['number']
+		code: tochar
 	}
-	'charat':       ValueNativeFunction{
-		args:   ['string', 'index']
-		code:   charat
+	'charat':          ValueNativeFunction{
+		args: ['string', 'index']
+		code: charat
 	}
-	'length':       ValueNativeFunction{
-		args:   ['string']
-		code:   strlength
+	'length':          ValueNativeFunction{
+		args: ['string']
+		code: strlength
 	}
-	'chars':        ValueNativeFunction{
-		args:   ['string']
-		code:   chars
+	'chars':           ValueNativeFunction{
+		args: ['string']
+		code: chars
 	}
-	'findall':      ValueNativeFunction{
-		args:   ['string', 'substring']
-		code:   findall
+	'findall':         ValueNativeFunction{
+		args: ['string', 'substring']
+		code: findall
 	}
-	'replace':       ValueNativeFunction{
-		args:   ['string', 'substring', 'with']
-		code:   replace
+	'replace':         ValueNativeFunction{
+		args: ['string', 'substring', 'with']
+		code: replace
 	}
-	'replaceonce':       ValueNativeFunction{
-		args:   ['string', 'substring', 'with']
-		code:   replaceonce
+	'replaceonce':     ValueNativeFunction{
+		args: ['string', 'substring', 'with']
+		code: replaceonce
 	}
-	'replaceeach':       ValueNativeFunction{
-		args:   ['string', 'substring', 'values']
-		code:   replaceeach
+	'replaceeach':     ValueNativeFunction{
+		args: ['string', 'substring', 'values']
+		code: replaceeach
 	}
-	'replaceeachonce':       ValueNativeFunction{
-		args:   ['string', 'substring', 'values']
-		code:   replaceeachonce
+	'replaceeachonce': ValueNativeFunction{
+		args: ['string', 'substring', 'values']
+		code: replaceeachonce
 	}
-	'format':       ValueNativeFunction{
-		args:   ['string', 'values']
-		code:   format
+	'format':          ValueNativeFunction{
+		args: ['string', 'values']
+		code: format
 	}
 }
 

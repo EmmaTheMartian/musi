@@ -42,7 +42,7 @@ const operator_precedence = {
 
 pub struct Parser {
 pub mut:
-	index  int
+	index int
 pub:
 	tokens []Token
 }
@@ -224,10 +224,10 @@ fn (mut p Parser) parse_invoke(node ast.INode) ast.NodeInvoke {
 	tok := p.peek()
 	args := p.tokens_until_closing(.literal, '(', .literal, ')', true)
 	return ast.NodeInvoke{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		func: node
-		args: parse_comma_list(args, false)
+		func:   node
+		args:   parse_comma_list(args, false)
 	}
 }
 
@@ -239,9 +239,9 @@ fn (mut p Parser) parse_block() ast.NodeBlock {
 	tok := p.peek()
 	tokens := p.tokens_until_closing(.keyword, 'do', .keyword, 'end', true)
 	return ast.NodeBlock{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		nodes: parse_list(tokens)
+		nodes:  parse_list(tokens)
 	}
 }
 
@@ -275,10 +275,10 @@ fn (mut p Parser) parse_fn() ast.NodeFn {
 	// skip commas in the arguments
 	block := p.parse_block()
 	return ast.NodeFn{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		args: parsed_args
-		code: block
+		args:   parsed_args
+		code:   block
 	}
 }
 
@@ -295,10 +295,10 @@ fn (mut p Parser) parse_let() ast.NodeLet {
 	p.skip()
 	value := p.parse_single() or { p.throw('unexpected eof before let value') }
 	return ast.NodeLet{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		name:  name
-		value: value
+		name:   name
+		value:  value
 	}
 }
 
@@ -310,9 +310,9 @@ fn (mut p Parser) parse_return() ast.NodeReturn {
 	tok := p.peek_n(-1)
 	node := p.parse_single() or { p.throw('unexpected eof before return value') }
 	return ast.NodeReturn{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		node: node
+		node:   node
 	}
 }
 
@@ -324,7 +324,7 @@ fn (mut p Parser) parse_list() ast.NodeList {
 	tok := p.peek_n(-1)
 	tokens := p.tokens_until_closing(.literal, '[', .literal, ']', false)
 	return ast.NodeList{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
 		values: parse_comma_list(tokens, true)
 	}
@@ -361,7 +361,7 @@ fn (mut p Parser) parse_table() ast.NodeTable {
 	p.skip()
 
 	return ast.NodeTable{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
 		values: data
 	}
@@ -378,10 +378,10 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 	mut chain := []ast.IfChainElement{}
 
 	chain << ast.IfChainElement{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		cond: p.parse_single() or { p.throw('expected condition after `if` statement.') }
-		code: p.parse_block()
+		cond:   p.parse_single() or { p.throw('expected condition after `if` statement.') }
+		code:   p.parse_block()
 	}
 
 	// parse `elseif`s
@@ -389,18 +389,18 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 		if p.check(.keyword, 'elseif') {
 			p.skip()
 			chain << ast.IfChainElement{
-				line: tok.line
+				line:   tok.line
 				column: tok.column
-				cond: p.parse_single() or { p.throw('expected condition after `if` statement.') }
-				code: p.parse_block()
+				cond:   p.parse_single() or { p.throw('expected condition after `if` statement.') }
+				code:   p.parse_block()
 			}
 		} else if p.check(.keyword, 'else') {
 			p.skip()
 			chain << ast.IfChainElement{
-				line: tok.line
+				line:   tok.line
 				column: tok.column
-				cond: ast.blank_node
-				code: p.parse_block()
+				cond:   ast.blank_node
+				code:   p.parse_block()
 			}
 			break
 		} else {
@@ -409,9 +409,9 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 	}
 
 	return ast.NodeIf{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		chain: chain
+		chain:  chain
 	}
 }
 
@@ -421,15 +421,13 @@ pub fn (mut p Parser) parse_if() ast.NodeIf {
 pub fn (mut p Parser) parse_while() ast.NodeWhile {
 	p.expect_n(.keyword, 'while', -1)
 	tok := p.peek_n(-1)
-	cond := p.parse_single() or {
-		p.throw('expected expression after `while` keyword.')
-	}
+	cond := p.parse_single() or { p.throw('expected expression after `while` keyword.') }
 	code := p.parse_block()
 	return ast.NodeWhile{
-		line: tok.line
+		line:   tok.line
 		column: tok.column
-		cond: cond
-		code: code
+		cond:   cond
+		code:   code
 	}
 }
 
@@ -450,9 +448,9 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 		}
 		.id {
 			node = ast.NodeId{
-				line: token.line
+				line:   token.line
 				column: token.column
-				value: token.value
+				value:  token.value
 			}
 		}
 		.keyword {
@@ -479,47 +477,47 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 		}
 		.str {
 			node = ast.NodeString{
-				line: token.line
+				line:   token.line
 				column: token.column
-				value: token.value
+				value:  token.value
 			}
 		}
 		.number {
 			node = ast.NodeNumber{
-				line: token.line
+				line:   token.line
 				column: token.column
-				value: token.value.f64()
+				value:  token.value.f64()
 			}
 		}
 		.boolean {
 			node = ast.NodeBool{
-				line: token.line
+				line:   token.line
 				column: token.column
-				value: token.value == 'true'
+				value:  token.value == 'true'
 			}
 		}
 		.null {
 			node = ast.NodeNull{
-				line: token.line
+				line:   token.line
 				column: token.column
 			}
 		}
 		.operator {
 			if token.value == '!' {
 				node = ast.NodeUnaryOperator{
-					line: token.line
+					line:   token.line
 					column: token.column
-					kind: .unary_not
-					value: p.parse_single() or {
+					kind:   .unary_not
+					value:  p.parse_single() or {
 						p.throw('expected expression after unary not operator')
 					}
 				}
 			} else if token.value == '~' {
 				node = ast.NodeUnaryOperator{
-					line: token.line
+					line:   token.line
 					column: token.column
-					kind: .bit_not
-					value: p.parse_single() or {
+					kind:   .bit_not
+					value:  p.parse_single() or {
 						p.throw('expected expression after bitwise not operator')
 					}
 				}
@@ -530,7 +528,7 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 		}
 		.eof {
 			node = ast.NodeEOF{
-				line: token.line
+				line:   token.line
 				column: token.column
 			}
 		}
@@ -585,20 +583,20 @@ fn (mut p Parser) check_for_operator(params ParseSingleParams, mut node ast.INod
 
 		if next_node_has_priority && mut next_node is ast.NodeOperator {
 			next_node.left = ast.NodeOperator{
-				line:  operator.line
-				column:  operator.column
-				kind:  get_operator_kind_from_str(operator.value)
-				left:  node_not_none
-				right: next_node.left
+				line:   operator.line
+				column: operator.column
+				kind:   get_operator_kind_from_str(operator.value)
+				left:   node_not_none
+				right:  next_node.left
 			}
 			node = *next_node
 		} else {
 			node = ast.NodeOperator{
-				line:  operator.line
-				column:  operator.column
-				kind:  get_operator_kind_from_str(operator.value)
-				left:  node_not_none
-				right: next_node
+				line:   operator.line
+				column: operator.column
+				kind:   get_operator_kind_from_str(operator.value)
+				left:   node_not_none
+				right:  next_node
 			}
 		}
 	}
@@ -649,8 +647,8 @@ pub fn parse_comma_list(tokens []Token, allow_trailing_comma bool) []ast.INode {
 @[inline]
 pub fn parse(tokens []Token) ast.AST {
 	return ast.AST{
-		line: if tokens.len > 0 { tokens[0].line } else { -1 }
-		column: if tokens.len > 0 { tokens[0].column } else { -1 }
+		line:     if tokens.len > 0 { tokens[0].line } else { -1 }
+		column:   if tokens.len > 0 { tokens[0].column } else { -1 }
 		children: parse_list(tokens)
 	}
 }

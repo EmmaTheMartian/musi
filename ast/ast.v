@@ -175,4 +175,4 @@ pub:
 	column int = -1
 }
 
-pub const blank_node := BlankNode{}
+pub const blank_node = BlankNode{}

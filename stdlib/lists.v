@@ -94,8 +94,8 @@ fn ieach(mut scope Scope) Value {
 
 	for index, value in list {
 		func.run(mut scope, {
-			func.args[0]: f64(index),
-			func.args[1]: value,
+			func.args[0]: f64(index)
+			func.args[1]: value
 		}, 'action')
 	}
 
@@ -155,65 +155,65 @@ fn reversed(mut scope Scope) Value {
 }
 
 pub const lists_module = {
-	'append':  Value(ValueNativeFunction{
-		args:   ['list', 'value']
-		code:   append
+	'append':    Value(ValueNativeFunction{
+		args: ['list', 'value']
+		code: append
 	})
-	'prepend': ValueNativeFunction{
-		args:   ['list', 'value']
-		code:   prepend
+	'prepend':   ValueNativeFunction{
+		args: ['list', 'value']
+		code: prepend
 	}
-	'pop':     ValueNativeFunction{
-		args:   ['list']
-		code:   pop
+	'pop':       ValueNativeFunction{
+		args: ['list']
+		code: pop
 	}
-	'delete':  ValueNativeFunction{
-		args:   ['list', 'index']
-		code:   delete
+	'delete':    ValueNativeFunction{
+		args: ['list', 'index']
+		code: delete
 	}
-	'clear':   ValueNativeFunction{
-		args:   ['list']
-		code:   clear
+	'clear':     ValueNativeFunction{
+		args: ['list']
+		code: clear
 	}
-	'set':     ValueNativeFunction{
-		args:   ['list', 'index', 'value']
-		code:   set
+	'set':       ValueNativeFunction{
+		args: ['list', 'index', 'value']
+		code: set
 	}
-	'get':     ValueNativeFunction{
-		args:   ['list', 'index']
-		code:   get
+	'get':       ValueNativeFunction{
+		args: ['list', 'index']
+		code: get
 	}
-	'each':    ValueNativeFunction{
-		args:   ['list', 'action']
-		code:   each
+	'each':      ValueNativeFunction{
+		args: ['list', 'action']
+		code: each
 	}
-	'ieach':   ValueNativeFunction{
-		args:   ['list', 'action']
-		code:   ieach
+	'ieach':     ValueNativeFunction{
+		args: ['list', 'action']
+		code: ieach
 	}
-	'range':   ValueNativeFunction{
-		args:   ['from', 'to']
-		code:   range
+	'range':     ValueNativeFunction{
+		args: ['from', 'to']
+		code: range
 	}
-	'listof':  ValueNativeFunction{
-		args:   ['size', 'of']
-		code:   listof
+	'listof':    ValueNativeFunction{
+		args: ['size', 'of']
+		code: listof
 	}
-	'filter':  ValueNativeFunction{
-		args:   ['list', 'predicate']
-		code:   filter
+	'filter':    ValueNativeFunction{
+		args: ['list', 'predicate']
+		code: filter
 	}
-	'map':     ValueNativeFunction{
-		args:   ['list', 'predicate']
-		code:   map_
+	'map':       ValueNativeFunction{
+		args: ['list', 'predicate']
+		code: map_
 	}
-	'length':  ValueNativeFunction{
-		args:   ['list']
-		code:   length
+	'length':    ValueNativeFunction{
+		args: ['list']
+		code: length
 	}
-	'revsersed':  ValueNativeFunction{
-		args:   ['list']
-		code:   reversed
+	'revsersed': ValueNativeFunction{
+		args: ['list']
+		code: reversed
 	}
 }
 

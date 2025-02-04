@@ -5,6 +5,7 @@ import datatypes { Stack }
 import ast { AST, NodeRoot }
 import tokenizer
 import parser
+
 pub struct InterpreterOptions {
 pub mut:
 	allow_imports   bool = true
@@ -49,14 +50,12 @@ pub fn (mut i Interpreter) new_scope() Scope {
 
 @[inline]
 pub fn (mut i Interpreter) push_trace(file string, source string, line int, column int) {
-	i.stacktrace.push(Trace{ file, source, line, column })
+	i.stacktrace.push(Trace{file, source, line, column})
 }
 
 @[inline]
 pub fn (mut i Interpreter) pop_trace() {
-	i.stacktrace.pop() or {
-		panic('attempted to pop stacktrace while no elements on were on it.')
-	}
+	i.stacktrace.pop() or { panic('attempted to pop stacktrace while no elements on were on it.') }
 }
 
 // run evaluates the provided AST in the interpreter's root scope and returns the scope's returned value.

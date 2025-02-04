@@ -96,48 +96,48 @@ fn size(mut scope Scope) Value {
 
 pub const files_module = {
 	'open':            Value(ValueNativeFunction{
-		args:   ['path']
-		code:   open
+		args: ['path']
+		code: open
 	})
 	'create':          ValueNativeFunction{
-		args:   ['path']
-		code:   create
+		args: ['path']
+		code: create
 	}
 	'exists':          ValueNativeFunction{
-		args:   ['path']
-		code:   exists
+		args: ['path']
+		code: exists
 	}
 	'close':           ValueNativeFunction{
-		args:   ['file']
-		code:   close
+		args: ['file']
+		code: close
 	}
 	'write':           ValueNativeFunction{
-		args:   ['file', 'data']
-		code:   write
+		args: ['file', 'data']
+		code: write
 	}
 	'flush':           ValueNativeFunction{
-		args:   ['file']
-		code:   flush
+		args: ['file']
+		code: flush
 	}
 	'getcursorpos':    ValueNativeFunction{
-		args:   ['file']
-		code:   getcursorpos
+		args: ['file']
+		code: getcursorpos
 	}
 	'setcursorpos':    ValueNativeFunction{
-		args:   ['file', 'pos']
-		code:   setcursorpos
+		args: ['file', 'pos']
+		code: setcursorpos
 	}
 	'offsetcursorpos': ValueNativeFunction{
-		args:   ['file', 'pos']
-		code:   offsetcursorpos
+		args: ['file', 'pos']
+		code: offsetcursorpos
 	}
 	'read':            ValueNativeFunction{
-		args:   ['file', 'bytes']
-		code:   read
+		args: ['file', 'bytes']
+		code: read
 	}
 	'size':            ValueNativeFunction{
-		args:   ['of']
-		code:   size
+		args: ['of']
+		code: size
 	}
 }
 

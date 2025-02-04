@@ -78,8 +78,8 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		}
 		ast.NodeFn {
 			return ValueFunction{
-				code:   node.code
-				args:   node.args
+				code: node.code
+				args: node.args
 			}
 		}
 		ast.NodeLet {

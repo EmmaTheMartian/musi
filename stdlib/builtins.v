@@ -67,10 +67,11 @@ fn fprint_(mut scope Scope) Value {
 	values := scope.get_fn_arg[[]Value]('values', 'fprint')
 	func := (scope.get('strings') or {
 		scope.throw('fprintln requires the `strings` module, but it is not present.')
-	} as map[string]Value)['format'] or {
-		scope.throw('fprintln: could not find `strings.format`')
-	}
-	print(scope.eval_function(func, {'string': text, 'values': values }, 'format') as string)
+	} as map[string]Value)['format'] or { scope.throw('fprintln: could not find `strings.format`') }
+	print(scope.eval_function(func, {
+		'string': text
+		'values': values
+	}, 'format') as string)
 	return interpreter.null_value
 }
 
@@ -80,10 +81,11 @@ fn fprintln_(mut scope Scope) Value {
 	values := scope.get_fn_arg[[]Value]('values', 'fprintln')
 	func := (scope.get('strings') or {
 		scope.throw('fprintln requires the `strings` module, but it is not present.')
-	} as map[string]Value)['format'] or {
-		scope.throw('fprintln: could not find `strings.format`')
-	}
-	println(scope.eval_function(func, {'string': text, 'values': values }, 'format') as string)
+	} as map[string]Value)['format'] or { scope.throw('fprintln: could not find `strings.format`') }
+	println(scope.eval_function(func, {
+		'string': text
+		'values': values
+	}, 'format') as string)
 	return interpreter.null_value
 }
 
@@ -103,40 +105,40 @@ fn gettrace(mut scope Scope) Value {
 
 pub const builtins = {
 	'import':   Value(ValueNativeFunction{
-		args:   ['module']
-		code:   import_
+		args: ['module']
+		code: import_
 	})
 	'tostring': ValueNativeFunction{
-		args:   ['thing']
-		code:   tostring
+		args: ['thing']
+		code: tostring
 	}
 	'tonumber': ValueNativeFunction{
-		args:   ['thing']
-		code:   tonumber
+		args: ['thing']
+		code: tonumber
 	}
 	'typeof':   ValueNativeFunction{
-		args:   ['it']
-		code:   typeof_
+		args: ['it']
+		code: typeof_
 	}
 	'print':    ValueNativeFunction{
-		args:   ['text']
-		code:   print_
+		args: ['text']
+		code: print_
 	}
 	'println':  ValueNativeFunction{
-		args:   ['text']
-		code:   println_
+		args: ['text']
+		code: println_
 	}
-	'fprint':    ValueNativeFunction{
-		args:   ['text', 'values']
-		code:   fprint_
+	'fprint':   ValueNativeFunction{
+		args: ['text', 'values']
+		code: fprint_
 	}
-	'fprintln':  ValueNativeFunction{
-		args:   ['text', 'values']
-		code:   fprintln_
+	'fprintln': ValueNativeFunction{
+		args: ['text', 'values']
+		code: fprintln_
 	}
 	'panic':    ValueNativeFunction{
-		args:   ['text']
-		code:   panic_
+		args: ['text']
+		code: panic_
 	}
 	'gettrace': ValueNativeFunction{
 		args: []

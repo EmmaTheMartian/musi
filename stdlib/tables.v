@@ -63,28 +63,28 @@ fn tableget(mut scope Scope) Value {
 
 pub const tables_module = {
 	'keys':   Value(ValueNativeFunction{
-		args:   ['table']
-		code:   keys
+		args: ['table']
+		code: keys
 	})
 	'values': ValueNativeFunction{
-		args:   ['table']
-		code:   values
+		args: ['table']
+		code: values
 	}
 	'pairs':  ValueNativeFunction{
-		args:   ['table']
-		code:   pairs
+		args: ['table']
+		code: pairs
 	}
 	'ipairs': ValueNativeFunction{
-		args:   ['table']
-		code:   ipairs
+		args: ['table']
+		code: ipairs
 	}
 	'set':    ValueNativeFunction{
-		args:   ['table', 'key', 'value']
-		code:   tableset
+		args: ['table', 'key', 'value']
+		code: tableset
 	}
 	'get':    ValueNativeFunction{
-		args:   ['table', 'key']
-		code:   tableget
+		args: ['table', 'key']
+		code: tableget
 	}
 }
 

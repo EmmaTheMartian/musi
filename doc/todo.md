@@ -2,7 +2,6 @@
 
 ## in progress
 
-- drastically improve error messages
 - stdlib
 - guides
 
@@ -30,5 +29,7 @@
 	```
 
 ## done
+
+- properly implement a stacktrace
 
 ## graveyard
