@@ -1,6 +1,5 @@
 module repl
 
-import os
 import term
 import readline
 import interpreter

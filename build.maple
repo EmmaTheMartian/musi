@@ -61,7 +61,10 @@ task:install = {
 	help = 'Installs the musi CLI to ~/.local/bin/musi'
 	category = 'install'
 	depends = [ 'build.prod' ]
-	run = 'ln -s $(pwd)/build/main ~/.local/bin/musi'
+	run = [
+		'rm ~/.local/bin/musi',
+		'ln -s $(pwd)/build/main ~/.local/bin/musi'
+	]
 }
 
 task:vet = {
