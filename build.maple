@@ -1,11 +1,27 @@
 plugins = [ 'v' ]
 
-config:v_args = '-enable-globals'
 config:v_main = 'src/main.v'
-
 config:musi_flags = '-syntax-debug'
-
 config:sources = 'ast/ interpreter/ parser/ src/ stdlib/ tokenizer/ musi.v'
+config:test_results_dir = 'testresults'
+
+task:build.debug = {
+	help = 'Builds with debug flags'
+	category = 'build'
+	run = [
+		'mkdir -p ${v_build_dir}',
+		'${v} -o ${v_build_dir}/${v_build_filename} ${v_args} ${v_debug_args} ${v_main}'
+	]
+}
+
+task:build.debugprod = {
+	help = 'Builds with debug and prod flags'
+	category = 'build'
+	run = [
+		'mkdir -p ${v_build_dir}',
+		'${v} -o ${v_build_dir}/${v_build_filename} ${v_args} ${v_debug_args} -prod ${v_main}'
+	]
+}
 
 task:test.sample = {
 	help = 'Tests a specific sample'
@@ -16,10 +32,36 @@ task:test.sample = {
 task:test.samples = {
 	help = 'Tests each sample'
 	category = 'test'
+	depends = [ 'build.debug' ]
 	run = [
-		'${v} ${v_args} -g run ${v_main} run ${musi_flags} samples/hello.musi',
-		'${v} ${v_args} -g run ${v_main} run ${musi_flags} samples/fib.musi'
+		'mkdir -p ${test_results_dir}',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/bf.musi | tee ${test_results_dir}/bf.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/fib.musi | tee ${test_results_dir}/fib.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/fileio.musi | tee ${test_results_dir}/fileio.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/hello.musi | tee ${test_results_dir}/hello.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/stringformat.musi | tee ${test_results_dir}/stringformat.txt'
 	]
+}
+
+task:test.samples.prod = {
+	help = 'Tests each sample'
+	category = 'test'
+	depends = [ 'build.debugprod' ]
+	run = [
+		'mkdir -p ${test_results_dir}',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/bf.musi | tee ${test_results_dir}/bf.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/fib.musi | tee ${test_results_dir}/fib.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/fileio.musi | tee ${test_results_dir}/fileio.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/hello.musi | tee ${test_results_dir}/hello.txt',
+		'${v_build_dir}/${v_build_filename} run ${musi_flags} samples/stringformat.musi | tee ${test_results_dir}/stringformat.txt'
+	]
+}
+
+task:install = {
+	help = 'Installs the musi CLI to ~/.local/bin/musi'
+	category = 'install'
+	depends = [ 'build.prod' ]
+	run = 'ln -s $(pwd)/build/main ~/.local/bin/musi'
 }
 
 task:vet = {

@@ -393,7 +393,8 @@ fn (mut s Scope) resolve_dots(node &ast.NodeOperator) []string {
 pub fn (mut s Scope) set_nested(dots []string, value Value) {
 	mut table := unsafe { &s.variables }
 	for i in 0 .. dots.len - 1 {
-		table = &(table.get(dots[i], s) as map[string]Value)
+		mut x := table.get(dots[i], s) as map[string]Value
+		table = &x
 	}
 	unsafe {
 		table[dots[dots.len - 1]] = value
@@ -520,11 +521,14 @@ pub fn (s &Scope) get_own(variable string) ?Value {
 // get_own_ptr gets a pointer to the value with the provided variable name from this scope (disregarding parent scopes).
 // see also: get_own
 @[inline]
-pub fn (s &Scope) get_own_ptr(variable string) ?&Value {
+pub fn (s &Scope) get_own_ptr(variable string) ?Value {
 	if variable in s.variables {
-		return &(s.variables[variable] or {
+		// return &(s.variables[variable] or {
+		// 	s.throw('uhh, i do not even know what this error would be caused by. just... report it please.')
+		// })
+		return s.variables[variable] or {
 			s.throw('uhh, i do not even know what this error would be caused by. just... report it please.')
-		})
+		}
 	} else {
 		return none
 	}

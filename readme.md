@@ -36,15 +36,17 @@ general-purpose language, i felt like it could work well.
 ## installation
 
 if you want to install musi for cli usage, you will need to compile from
-source. luckily that is really easy with v:
+source. luckily that is really easy:
 
 ```sh
 git clone https://github.com/emmathemartian/musi
 cd musi
-#v -prod src/main.v
-v src/main.v
+
+# With clockwork
+clockwork install
+
+# Without clockwork
+v -prod src/main.v
 # executable is at src/main, you can symlink it somewhere on path now if you want:
 ln -s $(pwd)/src/main ~/.local/bin/musi
 ```
-
-> compiling with `-prod` causes a c error. i am looking into this!

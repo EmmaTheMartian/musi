@@ -51,7 +51,7 @@ pub fn (scope &Scope) get_fn_arg_ptr[T](name string, fnname string) &T {
 @[inline]
 pub fn (scope &Scope) get_fn_arg_raw_ptr(name string, fnname string) &Value {
 	if x := scope.get_own_ptr(name) {
-		return x
+		return &x
 	} else {
 		panic('musi: ${fnname}: argument `${name}` not provided')
 	}
