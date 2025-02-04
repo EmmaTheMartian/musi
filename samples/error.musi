@@ -1,0 +1,11 @@
+let myfn = fn do
+	# This line produces an error do to an argument not being provided
+	println()
+end
+
+# This just adds more to the stacktrace
+let myotherfn = fn do
+	myfn()
+end
+
+myotherfn()

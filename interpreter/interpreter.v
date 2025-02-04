@@ -1,13 +1,14 @@
 module interpreter
 
 import os
+import datatypes { Stack }
 import ast { AST, NodeRoot }
 import tokenizer
 import parser
-
 pub struct InterpreterOptions {
 pub mut:
-	allow_imports bool = true
+	allow_imports   bool = true
+	coloured_errors bool = true
 }
 
 // Interpreter represents an interpretation context, containing the root scope, import information, and interpreter options.
@@ -18,19 +19,21 @@ pub mut:
 	import_root_path string
 	cached_imports   map[string]Value
 	options          InterpreterOptions
+	stacktrace       Stack[Trace] = Stack[Trace]{}
 	// scope_init_fn is called when new scopes are made under the interpreter (only for root_scope and isolated scopes), this is intended to be used to apply the standard library to scopes.
 	scope_init_fn fn (mut Scope) @[required]
 }
 
 // Interpreter.new creates a new interpreter and returns a pointer to it.
+// `file_tracer` should be the name of the file being executed, or `<string>` if a raw string is being executed.
 // `root_path` should be the **directory** of the file executed (for example, if executing `./samples/test.musi`, `root_path` would be `./samples/`)
 // `options` contain options for the interpreter, controlling language permissions (i.e, sandboxes).
 // `scope_init_fn` is a function called on the interpreter's root scope and any isolated scopes made, this is used to apply the stdlib to scopes.
 @[inline]
-pub fn Interpreter.new(root_path string, options InterpreterOptions, scope_init_fn fn (mut Scope)) &Interpreter {
+pub fn Interpreter.new(file_tracer string, root_path string, options InterpreterOptions, scope_init_fn fn (mut Scope)) &Interpreter {
 	mut i := &Interpreter{
 		import_root_path: root_path
-		root_scope:       Scope.new(unsafe { nil }, 'program')
+		root_scope:       Scope.new(unsafe { nil }, file_tracer)
 		scope_init_fn:    scope_init_fn
 	}
 	i.root_scope.interpreter = i
@@ -38,10 +41,22 @@ pub fn Interpreter.new(root_path string, options InterpreterOptions, scope_init_
 	return i
 }
 
-// new_scope creates a new child scope under the root scope with the given tracer, then returns it.
+// new_scope creates a new child scope under the root scope, then returns it.
 @[inline]
-pub fn (mut i Interpreter) new_scope(tracer string) Scope {
-	return i.root_scope.make_child(tracer)
+pub fn (mut i Interpreter) new_scope() Scope {
+	return i.root_scope.make_child()
+}
+
+@[inline]
+pub fn (mut i Interpreter) push_trace(file string, source string, line int, column int) {
+	i.stacktrace.push(Trace{ file, source, line, column })
+}
+
+@[inline]
+pub fn (mut i Interpreter) pop_trace() {
+	i.stacktrace.pop() or {
+		panic('attempted to pop stacktrace while no elements on were on it.')
+	}
 }
 
 // run evaluates the provided AST in the interpreter's root scope and returns the scope's returned value.
@@ -52,10 +67,11 @@ pub fn (mut i Interpreter) run(tree &AST) Value {
 
 // run_isolated evaluates the provided AST in the a fresh scope complete detached from the interpreter's root scope and returns the scope's returned value.
 // notably, this is used for importing files.
-// `init` is called on the scope after making it and before evaluating, you can use it to add the stdlib.
+// `file_tracer` should be the name of the file being executed, or `<string>` if a raw string is being executed.
+// `Interpreter.scope_init_fn` is called on the scope after making it and before evaluating, you can use it to add the stdlib.
 @[inline]
-pub fn (mut i Interpreter) run_isolated(tree &AST, tracer string) Value {
-	mut scope := Scope.new(i, tracer)
+pub fn (mut i Interpreter) run_isolated(file_tracer string, tree &AST) Value {
+	mut scope := Scope.new(i, file_tracer)
 	i.scope_init_fn(mut scope)
 	return scope.eval(&NodeRoot(tree))
 }
@@ -110,7 +126,7 @@ pub fn (mut i Interpreter) run_file_isolated(path string) Value {
 	}
 	t.tokenize()
 	ast_ := parser.parse(t.tokens)
-	return i.run_isolated(ast_, path)
+	return i.run_isolated(path, ast_)
 }
 
 @[inline]
@@ -132,5 +148,5 @@ pub fn (mut i Interpreter) run_string_isolated(s string) Value {
 	}
 	t.tokenize()
 	ast_ := parser.parse(t.tokens)
-	return i.run_isolated(ast_, '<string>')
+	return i.run_isolated('<string>', ast_)
 }

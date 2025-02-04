@@ -5,41 +5,47 @@ import ast { NodeBlock }
 pub interface IFunctionValue {
 	args []string
 
-	run(mut Scope, map[string]Value) Value
+	run(mut Scope, map[string]Value, string) Value
 }
 
 pub struct ValueNativeFunction implements IFunctionValue {
 pub:
-	tracer string
 	code   fn (mut Scope) Value @[required]
 	args   []string
 }
 
 // run runs the native function using `args` in subscope of the provided scope, then returns the function's returned value.
-pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value) Value {
-	mut scope := s.make_child(func.tracer)
+// `tracer` is used to add the function's name to the stacktrace.
+pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value, tracer string) Value {
+	s.interpreter.push_trace(s.file, tracer, -1, -1) //TODO: add line/column
+	mut scope := s.make_child()
 	// add args to scope
 	for arg, val in args {
 		scope.new(arg, val)
 	}
-	return func.code(mut scope)
+	returned := func.code(mut scope)
+	s.interpreter.pop_trace()
+	return returned
 }
 
 pub struct ValueFunction implements IFunctionValue {
 pub:
-	tracer string
 	code   NodeBlock
 	args   []string
 }
 
 // run runs the function using `args` in subscope of the provided scope, then returns the function's returned value.
-pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value) Value {
-	mut scope := s.make_child(func.tracer)
+// `tracer` is used to add the function's name to the stacktrace.
+pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value, tracer string) Value {
+	s.interpreter.push_trace(s.file, tracer, func.code.line, func.code.column)
+	mut scope := s.make_child()
 	// add args to scope
 	for arg, val in args {
 		scope.new(arg, val)
 	}
-	return scope.eval(func.code)
+	returned := scope.eval(func.code)
+	s.interpreter.pop_trace()
+	return returned
 }
 
 pub struct ValueNull {}
@@ -84,10 +90,10 @@ pub fn (v &Value) to_string() string {
 			return v.str()
 		}
 		ValueFunction {
-			return v.tracer
+			return 'fn'
 		}
 		ValueNativeFunction {
-			return v.tracer
+			return 'nativefn'
 		}
 		[]Value {
 			return v.str()

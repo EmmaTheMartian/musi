@@ -107,57 +107,46 @@ pub fn format(mut scope Scope) Value {
 
 pub const strings_module = {
 	'repeatstring': Value(ValueNativeFunction{
-		tracer: 'repeatstring'
 		args:   ['string', 'count']
 		code:   repeatstring
 	})
 	'tochar':       ValueNativeFunction{
-		tracer: 'tochar'
 		args:   ['number']
 		code:   tochar
 	}
 	'charat':       ValueNativeFunction{
-		tracer: 'charat'
 		args:   ['string', 'index']
 		code:   charat
 	}
 	'length':       ValueNativeFunction{
-		tracer: 'length'
 		args:   ['string']
 		code:   strlength
 	}
 	'chars':        ValueNativeFunction{
-		tracer: 'chars'
 		args:   ['string']
 		code:   chars
 	}
 	'findall':      ValueNativeFunction{
-		tracer: 'findall'
 		args:   ['string', 'substring']
 		code:   findall
 	}
 	'replace':       ValueNativeFunction{
-		tracer: 'replace'
 		args:   ['string', 'substring', 'with']
 		code:   replace
 	}
 	'replaceonce':       ValueNativeFunction{
-		tracer: 'replaceonce'
 		args:   ['string', 'substring', 'with']
 		code:   replaceonce
 	}
 	'replaceeach':       ValueNativeFunction{
-		tracer: 'replaceeach'
 		args:   ['string', 'substring', 'values']
 		code:   replaceeach
 	}
 	'replaceeachonce':       ValueNativeFunction{
-		tracer: 'replaceeachonce'
 		args:   ['string', 'substring', 'values']
 		code:   replaceeachonce
 	}
 	'format':       ValueNativeFunction{
-		tracer: 'format'
 		args:   ['string', 'values']
 		code:   format
 	}

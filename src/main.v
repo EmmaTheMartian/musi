@@ -57,8 +57,6 @@ fn main() {
 				os.write_file('debug/syntax/ast.txt', ast.str())!
 			}
 
-			println('directory of input file: ${os.dir(input_file)}')
-
 			root_import_dir := os.dir(input_file)
 			opts := interpreter.InterpreterOptions{}
 			use_stdlib := !c.flags.get_bool('no-std')!
@@ -68,7 +66,7 @@ fn main() {
 				}
 			}
 
-			mut i := interpreter.Interpreter.new(root_import_dir, opts, scope_init_fn)
+			mut i := interpreter.Interpreter.new(input_file, root_import_dir, opts, scope_init_fn)
 			file_return_value := i.run(ast)
 
 			if file_return_value != interpreter.null_value {

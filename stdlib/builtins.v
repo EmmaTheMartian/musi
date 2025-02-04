@@ -70,7 +70,7 @@ fn fprint_(mut scope Scope) Value {
 	} as map[string]Value)['format'] or {
 		scope.throw('fprintln: could not find `strings.format`')
 	}
-	print(scope.eval_function(func, {'string': text, 'values': values }) as string)
+	print(scope.eval_function(func, {'string': text, 'values': values }, 'format') as string)
 	return interpreter.null_value
 }
 
@@ -83,7 +83,7 @@ fn fprintln_(mut scope Scope) Value {
 	} as map[string]Value)['format'] or {
 		scope.throw('fprintln: could not find `strings.format`')
 	}
-	println(scope.eval_function(func, {'string': text, 'values': values }) as string)
+	println(scope.eval_function(func, {'string': text, 'values': values }, 'format') as string)
 	return interpreter.null_value
 }
 
@@ -96,51 +96,51 @@ fn panic_(mut scope Scope) Value {
 	return interpreter.null_value
 }
 
+@[inline]
+fn gettrace(mut scope Scope) Value {
+	return scope.interpreter.stacktrace.array().map(|it| Value('${it.file}:${it.source}:${it.line}:${it.column}'))
+}
+
 pub const builtins = {
 	'import':   Value(ValueNativeFunction{
-		tracer: 'import'
 		args:   ['module']
 		code:   import_
 	})
 	'tostring': ValueNativeFunction{
-		tracer: 'tostring'
 		args:   ['thing']
 		code:   tostring
 	}
 	'tonumber': ValueNativeFunction{
-		tracer: 'tostring'
 		args:   ['thing']
 		code:   tonumber
 	}
 	'typeof':   ValueNativeFunction{
-		tracer: 'typeof'
 		args:   ['it']
 		code:   typeof_
 	}
 	'print':    ValueNativeFunction{
-		tracer: 'print'
 		args:   ['text']
 		code:   print_
 	}
 	'println':  ValueNativeFunction{
-		tracer: 'println'
 		args:   ['text']
 		code:   println_
 	}
 	'fprint':    ValueNativeFunction{
-		tracer: 'fprint'
 		args:   ['text', 'values']
 		code:   fprint_
 	}
 	'fprintln':  ValueNativeFunction{
-		tracer: 'fprintln'
 		args:   ['text', 'values']
 		code:   fprintln_
 	}
 	'panic':    ValueNativeFunction{
-		tracer: 'panic'
 		args:   ['text']
 		code:   panic_
+	}
+	'gettrace': ValueNativeFunction{
+		args: []
+		code: gettrace
 	}
 }
 

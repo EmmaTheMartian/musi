@@ -15,7 +15,7 @@ pub mut:
 @[inline]
 pub fn REPL.new() REPL {
 	return REPL{
-		vm: interpreter.Interpreter.new('.', interpreter.InterpreterOptions{}, fn (mut scope interpreter.Scope) {
+		vm: interpreter.Interpreter.new('<repl>', '.', interpreter.InterpreterOptions{}, fn (mut scope interpreter.Scope) {
 			stdlib.apply_stdlib(mut scope)
 		})
 	}

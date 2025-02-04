@@ -8,7 +8,7 @@ pub struct Scope {
 pub mut:
 	interpreter &Interpreter @[required]
 	parent      &Scope       @[required]
-	tracer      string       @[required] // used to help make tracebacks
+	file        string       @[required]
 	variables   map[string]Value
 	returned    ?Value
 }
@@ -18,9 +18,17 @@ pub mut:
 @[noreturn]
 pub fn (s &Scope) throw(message string) {
 	eprintln('---')
-	eprintln('musi: interpreter: ${message}')
-	eprintln('stacktrace:')
-	eprintln(s.get_trace().map(|it| '\t${it}').join('\n'))
+	eprintln('\033[31mmusi error\033[0m: ${message}')
+	eprintln('\033[31mstacktrace\033[0m:')
+	if s.interpreter.options.coloured_errors {
+		for trace in s.interpreter.stacktrace.array() {
+			eprintln('  \033[32m${trace.file}\033[0m:\033[34m${trace.line}\033[0m:\033[34m${trace.column}\033[0m at \033[35m${trace.source}\033[0m')
+		}
+	} else {
+		for trace in s.interpreter.stacktrace.array() {
+			eprintln('  ${trace.file}:${trace.source}:${trace.line}:${trace.column}')
+		}
+	}
 	eprintln('---')
 	$if debug {
 		panic(message)
@@ -29,14 +37,14 @@ pub fn (s &Scope) throw(message string) {
 }
 
 // get_trace follows all scope parents and gets their tracers, returning each as a list.
-pub fn (s &Scope) get_trace() []string {
-	mut trace := []string{}
-	trace << s.tracer
-	if s.parent != unsafe { nil } {
-		trace << s.parent.get_trace()
-	}
-	return trace
-}
+// pub fn (s &Scope) get_trace() []string {
+// 	mut trace := []string{}
+// 	trace << s.tracer
+// 	if s.parent != unsafe { nil } {
+// 		trace << s.parent.get_trace()
+// 	}
+// 	return trace
+// }
 
 // eval evaluates the given node under the scope and returns the evaluated value.
 pub fn (mut s Scope) eval(node &INode) Value {
@@ -70,7 +78,6 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		}
 		ast.NodeFn {
 			return ValueFunction{
-				tracer: 'anonfn'
 				code:   node.code
 				args:   node.args
 			}
@@ -100,7 +107,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		}
 		ast.NodeIf {
 			for chain_link in node.chain {
-				if chain_link.cond != none {
+				if chain_link.cond != INode(ast.blank_node) {
 					if s.eval(chain_link.cond) == Value(true) {
 						return s.eval(chain_link.code)
 					}
@@ -112,7 +119,7 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		}
 		ast.NodeWhile {
 			for s.eval(node.cond) == true_value {
-				mut c := s.make_child('while')
+				mut c := s.make_child()
 				c.eval(node.code)
 			}
 			return null_value
@@ -149,11 +156,11 @@ pub fn (mut s Scope) eval(node &INode) Value {
 
 // eval_function evaluates the provided function value with the provided args, then returns the function's returned value.
 // see also: invoke
-pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value {
+pub fn (mut s Scope) eval_function(function Value, args map[string]Value, tracer string) Value {
 	if function is ValueFunction {
-		return function.run(mut s, args)
+		return function.run(mut s, args, tracer)
 	} else if function is ValueNativeFunction {
-		return function.run(mut s, args)
+		return function.run(mut s, args, tracer)
 	} else {
 		s.throw('attempted to invoke non-function: ${function}')
 	}
@@ -161,19 +168,19 @@ pub fn (mut s Scope) eval_function(function Value, args map[string]Value) Value 
 
 // eval_function_list_args evaluates the provided function value with the provided args, then returns the function's returned value.
 // see also: invoke
-pub fn (mut s Scope) eval_function_list_args(function Value, args []Value) Value {
+pub fn (mut s Scope) eval_function_list_args(function Value, args []Value, tracer string) Value {
 	if function is ValueFunction {
 		mut func_args := map[string]Value{}
 		for i, value in args {
 			func_args[function.args[i]] = value
 		}
-		return function.run(mut s, func_args)
+		return function.run(mut s, func_args, tracer)
 	} else if function is ValueNativeFunction {
 		mut func_args := map[string]Value{}
 		for i, value in args {
 			func_args[function.args[i]] = value
 		}
-		return function.run(mut s, func_args)
+		return function.run(mut s, func_args, tracer)
 	} else {
 		s.throw('attempted to invoke non-function: ${function}')
 	}
@@ -185,9 +192,9 @@ pub fn (mut s Scope) eval_function_list_args(function Value, args []Value) Value
 pub fn (mut s Scope) invoke(func string, args map[string]Value) Value {
 	variable := s.get(func) or { s.throw('cannot invoke non-existent function `${func}`') }
 	if variable is ValueFunction {
-		return variable.run(mut s, args)
+		return variable.run(mut s, args, func)
 	} else if variable is ValueNativeFunction {
-		return variable.run(mut s, args)
+		return variable.run(mut s, args, func)
 	} else {
 		s.throw('attempted to invoke non-function: ${func}')
 	}
@@ -203,13 +210,13 @@ pub fn (mut s Scope) invoke_list(func string, args []Value) Value {
 		for i, value in args {
 			func_args[variable.args[i]] = value
 		}
-		return variable.run(mut s, func_args)
+		return variable.run(mut s, func_args, func)
 	} else if variable is ValueNativeFunction {
 		mut func_args := map[string]Value{}
 		for i, value in args {
 			func_args[variable.args[i]] = value
 		}
-		return variable.run(mut s, func_args)
+		return variable.run(mut s, func_args, func)
 	} else {
 		s.throw('attempted to invoke non-function: ${func}')
 	}
@@ -218,12 +225,12 @@ pub fn (mut s Scope) invoke_list(func string, args []Value) Value {
 // invoke_eval invokes the provided function using the provided args, then returns the function's returned value.
 // see also: invoke, eval_function, eval_function_args
 @[inline]
-fn (mut s Scope) invoke_eval(func &INode, args map[string]Value) Value {
+fn (mut s Scope) invoke_eval(func &INode, args map[string]Value, tracer string) Value {
 	variable := s.eval(func)
 	if variable is ValueFunction {
-		return variable.run(mut s, args)
+		return variable.run(mut s, args, tracer)
 	} else if variable is ValueNativeFunction {
-		return variable.run(mut s, args)
+		return variable.run(mut s, args, tracer)
 	} else {
 		s.throw('attempted to invoke non-function: ${func}')
 	}
@@ -259,7 +266,13 @@ fn (mut s Scope) eval_function_args(func Value, node &ast.NodeInvoke) map[string
 fn (mut s Scope) invoke_node(node &ast.NodeInvoke) Value {
 	variable := s.eval(node.func)
 	args := s.eval_function_args(variable, node)
-	return s.invoke_eval(node.func, args)
+	return s.invoke_eval(node.func, args, if node.func is ast.NodeId {
+		node.func.value
+	} else if node.func is ast.NodeOperator && node.func.kind == .dot {
+		s.resolve_dots(node.func).join('.')
+	} else {
+		'(no name)'
+	})
 }
 
 // eval_operator evaluates and returns the given `ast.NodeOperator`.
@@ -326,12 +339,15 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator, params EvalDotsParams) Value 
 		node.right.value
 	} else if node.right is ast.NodeInvoke {
 		if left is map[string]Value {
+			mut name := 'lambda'
 			variable := if node.right.func is ast.NodeId {
-				left[node.right.func.value] or {
+				name = node.right.func.value
+				left[name] or {
 					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
 				}
 			} else if node.right.func is ast.NodeString {
-				left[node.right.func.value] or {
+				name = node.right.func.value
+				left[name] or {
 					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
 				}
 			} else {
@@ -344,10 +360,10 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator, params EvalDotsParams) Value 
 					args << s.eval(arg)
 				}
 				// println('pipe_in args: ${args}')
-				return s.eval_function_list_args(variable, args)
+				return s.eval_function_list_args(variable, args, name)
 			} else {
 				args := s.eval_function_args(variable, node.right)
-				return s.eval_function(variable, args)
+				return s.eval_function(variable, args, name)
 			}
 		}
 		s.throw('cannot use dot operator (.) on object `${left}`')
@@ -440,7 +456,13 @@ fn (mut s Scope) pipe(to_pipe Value, pipe_into &INode) Value {
 		s.throw('attempted to invoke non-function: ${func.func}')
 	}
 
-	return s.invoke_eval(func.func, args)
+	return s.invoke_eval(func.func, args, if pipe_into is ast.NodeOperator {
+		s.resolve_dots(pipe_into).join('.')
+	} else if pipe_into is ast.NodeId {
+		pipe_into.value
+	} else {
+		typeof(pipe_into).name
+	})
 }
 
 // import imports the given module (`mod`), returning it.
@@ -554,23 +576,23 @@ pub fn (mut s Scope) set(variable string, value Value) {
 	scope.variables[variable] = value
 }
 
-// make_child makes a child scope with the given tracer, then returns it.
+// make_child makes a child scope, then returns it.
 @[inline]
-pub fn (s &Scope) make_child(tracer string) Scope {
+pub fn (s &Scope) make_child() Scope {
 	child := Scope{
 		interpreter: s.interpreter
 		parent:      s
-		tracer:      tracer
+		file:        s.file
 	}
 	return child
 }
 
 // Scope.new creates a new scope for the given interpreter, then returns it.
 @[inline]
-pub fn Scope.new(i &Interpreter, tracer string) Scope {
+pub fn Scope.new(i &Interpreter, file string) Scope {
 	return Scope{
 		interpreter: i
 		parent:      unsafe { nil }
-		tracer:      tracer
+		file:        file
 	}
 }

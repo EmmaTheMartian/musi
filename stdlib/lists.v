@@ -73,7 +73,7 @@ fn each(mut scope Scope) Value {
 	for value in list {
 		func.run(mut scope, {
 			func.args[0]: value
-		})
+		}, 'action')
 	}
 
 	return interpreter.null_value
@@ -96,7 +96,7 @@ fn ieach(mut scope Scope) Value {
 		func.run(mut scope, {
 			func.args[0]: f64(index),
 			func.args[1]: value,
-		})
+		}, 'action')
 	}
 
 	return interpreter.null_value
@@ -126,7 +126,7 @@ fn filter(mut scope Scope) Value {
 	predicate := scope.get_fn_arg_raw('predicate', 'filter')
 	mut filtered := []Value{}
 	for x in to_filter {
-		if scope.eval_function_list_args(predicate, [x]) == Value(true) {
+		if scope.eval_function_list_args(predicate, [x], 'predicate') == Value(true) {
 			filtered << x
 		}
 	}
@@ -139,7 +139,7 @@ fn map_(mut scope Scope) Value {
 	predicate := scope.get_fn_arg_raw('predicate', 'map')
 	mut mapped := []Value{}
 	for x in to_map {
-		mapped << scope.eval_function_list_args(predicate, [x])
+		mapped << scope.eval_function_list_args(predicate, [x], 'predicate')
 	}
 	return mapped
 }
@@ -156,77 +156,62 @@ fn reversed(mut scope Scope) Value {
 
 pub const lists_module = {
 	'append':  Value(ValueNativeFunction{
-		tracer: 'append'
 		args:   ['list', 'value']
 		code:   append
 	})
 	'prepend': ValueNativeFunction{
-		tracer: 'prepend'
 		args:   ['list', 'value']
 		code:   prepend
 	}
 	'pop':     ValueNativeFunction{
-		tracer: 'pop'
 		args:   ['list']
 		code:   pop
 	}
 	'delete':  ValueNativeFunction{
-		tracer: 'delete'
 		args:   ['list', 'index']
 		code:   delete
 	}
 	'clear':   ValueNativeFunction{
-		tracer: 'clear'
 		args:   ['list']
 		code:   clear
 	}
 	'set':     ValueNativeFunction{
-		tracer: 'set'
 		args:   ['list', 'index', 'value']
 		code:   set
 	}
 	'get':     ValueNativeFunction{
-		tracer: 'get'
 		args:   ['list', 'index']
 		code:   get
 	}
 	'each':    ValueNativeFunction{
-		tracer: 'each'
 		args:   ['list', 'action']
 		code:   each
 	}
 	'ieach':   ValueNativeFunction{
-		tracer: 'ieach'
 		args:   ['list', 'action']
 		code:   ieach
 	}
 	'range':   ValueNativeFunction{
-		tracer: 'range'
 		args:   ['from', 'to']
 		code:   range
 	}
 	'listof':  ValueNativeFunction{
-		tracer: 'listof'
 		args:   ['size', 'of']
 		code:   listof
 	}
 	'filter':  ValueNativeFunction{
-		tracer: 'filter'
 		args:   ['list', 'predicate']
 		code:   filter
 	}
 	'map':     ValueNativeFunction{
-		tracer: 'map'
 		args:   ['list', 'predicate']
 		code:   map_
 	}
 	'length':  ValueNativeFunction{
-		tracer: 'length'
 		args:   ['list']
 		code:   length
 	}
 	'revsersed':  ValueNativeFunction{
-		tracer: 'reversed'
 		args:   ['list']
 		code:   reversed
 	}
