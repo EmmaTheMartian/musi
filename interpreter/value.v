@@ -71,3 +71,35 @@ pub fn (mut v map[string]Value) set(name string, value Value) {
 pub fn (mut v map[string]Value) get(name string, scope &Scope) Value {
 	return v[name] or { scope.throw('failed to index table with key `${name}`') }
 }
+
+pub fn (v &Value) to_string() string {
+	match v {
+		string {
+			return v
+		}
+		f64 {
+			return v.str()
+		}
+		bool {
+			return v.str()
+		}
+		ValueFunction {
+			return v.tracer
+		}
+		ValueNativeFunction {
+			return v.tracer
+		}
+		[]Value {
+			return v.str()
+			// return Value('list')
+		}
+		map[string]Value {
+			return v.str()
+			// return Value('table')
+		}
+		ValueNull {
+			return 'null'
+		}
+		voidptr { return 'voidptr' }
+	}
+}

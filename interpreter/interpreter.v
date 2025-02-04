@@ -112,3 +112,25 @@ pub fn (mut i Interpreter) run_file_isolated(path string) Value {
 	ast_ := parser.parse(t.tokens)
 	return i.run_isolated(ast_, path)
 }
+
+@[inline]
+pub fn (mut i Interpreter) run_string(s string) Value {
+	mut t := tokenizer.Tokenizer{
+		input: s
+		ilen:  s.len
+	}
+	t.tokenize()
+	ast_ := parser.parse(t.tokens)
+	return i.run(ast_)
+}
+
+@[inline]
+pub fn (mut i Interpreter) run_string_isolated(s string) Value {
+	mut t := tokenizer.Tokenizer{
+		input: s
+		ilen:  s.len
+	}
+	t.tokenize()
+	ast_ := parser.parse(t.tokens)
+	return i.run_isolated(ast_, '<string>')
+}

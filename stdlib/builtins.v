@@ -9,36 +9,7 @@ fn import_(mut scope Scope) Value {
 
 @[inline]
 fn tostring(mut scope Scope) Value {
-	thing := scope.get_fn_arg_raw('thing', 'tostring')
-	match thing {
-		string {
-			return thing
-		}
-		f64 {
-			return thing.str()
-		}
-		bool {
-			return thing.str()
-		}
-		ValueFunction {
-			return thing.tracer
-		}
-		ValueNativeFunction {
-			return thing.tracer
-		}
-		[]Value {
-			return thing.str()
-			// return Value('list')
-		}
-		map[string]Value {
-			return thing.str()
-			// return Value('table')
-		}
-		ValueNull {
-			return 'null'
-		}
-		voidptr { return 'voidptr' }
-	}
+	return scope.get_fn_arg_raw('thing', 'tostring').to_string()
 }
 
 @[inline]

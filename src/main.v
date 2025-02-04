@@ -7,14 +7,18 @@ import tokenizer
 import parser
 import interpreter
 import stdlib
+import repl
 
 fn main() {
 	mod := vmod.decode(@VMOD_FILE)!
+
 	mut cmd := cli.Command{
 		name:        'musi'
 		description: 'musi'
 		version:     mod.version
 	}
+
+	// Subcommands
 	mut run := cli.Command{
 		name:          'run'
 		usage:         '<file>'
@@ -72,18 +76,32 @@ fn main() {
 			}
 		}
 	}
+
+	mut repl_cmd := cli.Command{
+		name:    'repl'
+		execute: fn (c cli.Command) ! {
+			mut it := repl.REPL.new()
+			it.run()
+		}
+	}
+
+	// Flags
 	run.add_flag(cli.Flag{
 		flag:        .bool
 		name:        'syntax-debug'
 		description: 'Enables tokenizer and parser debug output'
 	})
+
 	run.add_flag(cli.Flag{
 		flag:        .bool
 		name:        'no-std'
 		abbrev:      '-S'
 		description: 'Disables the standard library'
 	})
+
+	// Run!
 	cmd.add_command(run)
+	cmd.add_command(repl_cmd)
 	cmd.setup()
 	cmd.parse(os.args)
 }
