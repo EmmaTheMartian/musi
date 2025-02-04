@@ -51,7 +51,6 @@ pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value, tracer stri
 pub struct ValueNull {}
 
 pub type Value = string
-	//| i64 // TODO
 	| f64
 	| bool
 	| ValueFunction
@@ -78,6 +77,7 @@ pub fn (mut v map[string]Value) get(name string, scope &Scope) Value {
 	return v[name] or { scope.throw('failed to index table with key `${name}`') }
 }
 
+// to_string converts the value to a string.
 pub fn (v &Value) to_string() string {
 	match v {
 		string {

@@ -90,7 +90,7 @@ fn size(mut scope Scope) Value {
 		file.seek(start, .start) or { panic(err) }
 		return f64(size)
 	} else {
-		scope.throw('size: argument `of` mustbe a string or voidptr.')
+		scope.throw('size: argument `of` must be a string or voidptr.')
 	}
 }
 
@@ -141,6 +141,7 @@ pub const files_module = {
 	}
 }
 
+// apply_files applies the file i/o module (`files`) to the given scope.
 @[inline]
 pub fn apply_files(mut scope Scope) {
 	scope.new('files', files_module)

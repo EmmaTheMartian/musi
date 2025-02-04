@@ -2,6 +2,7 @@ module stdlib
 
 import interpreter { Scope }
 
+// apply_stdlib applies the entire standard library to the given scope.
 @[inline]
 pub fn apply_stdlib(mut scope Scope) {
 	apply_builtins(mut scope)
@@ -9,4 +10,5 @@ pub fn apply_stdlib(mut scope Scope) {
 	apply_lists(mut scope)
 	apply_strings(mut scope)
 	apply_tables(mut scope)
+	apply_testing(mut scope)
 }

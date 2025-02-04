@@ -20,7 +20,7 @@ pub const keywords = [
 	'let',
 	'return',
 	'while',
-]
+]!
 pub const operators = [
 	// comparison
 	'==',
@@ -49,7 +49,7 @@ pub const operators = [
 	'.',
 	'->',
 	'=',
-]
+]!
 
 pub enum TokenKind {
 	@none

@@ -6,10 +6,7 @@ import tokenizer { Token, TokenKind }
 // operators where nested operators should be given to the leftmost operator instead of the rightmost.
 // nodes excluded from this list resolve as: 1 + 2 + 3 resolves to add(1, add(2, 3))
 // nodes in this list resolve as: 1 + 2 + 3 resolves to add(add(1, 2), 3)
-// const operators_with_left_priority = [
-// 	// ast.Operator.assign,
-// 	// ast.Operator.dot,
-// ]
+// for now, no operators need this.
 const operators_with_left_priority = []ast.Operator{}
 
 // same as

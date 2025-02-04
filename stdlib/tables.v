@@ -88,6 +88,7 @@ pub const tables_module = {
 	}
 }
 
+// apply_tables applies the `tables` to the given scope.
 pub fn apply_tables(mut scope Scope) {
 	scope.new('tables', tables_module)
 }

@@ -1,0 +1,4 @@
+testing.context('stdlib/testing/testing.musi', [
+	testing.test('true', true, true),
+	testing.test('false', false, false)
+])

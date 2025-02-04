@@ -48,11 +48,14 @@ pub fn (mut i Interpreter) new_scope() Scope {
 	return i.root_scope.make_child()
 }
 
+// push_trace pushes a `Trace` to the stacktrace.
+// make sure to pop_trace all pushed traces!
 @[inline]
 pub fn (mut i Interpreter) push_trace(file string, source string, line int, column int) {
 	i.stacktrace.push(Trace{file, source, line, column})
 }
 
+// pop_trace pops a `Trace` from the stacktrace.
 @[inline]
 pub fn (mut i Interpreter) pop_trace() {
 	i.stacktrace.pop() or { panic('attempted to pop stacktrace while no elements on were on it.') }
@@ -128,6 +131,8 @@ pub fn (mut i Interpreter) run_file_isolated(path string) Value {
 	return i.run_isolated(path, ast_)
 }
 
+// run_string tokenizes, parses, and executes the given string.
+// see also: run_string_isolated
 @[inline]
 pub fn (mut i Interpreter) run_string(s string) Value {
 	mut t := tokenizer.Tokenizer{
@@ -139,6 +144,8 @@ pub fn (mut i Interpreter) run_string(s string) Value {
 	return i.run(ast_)
 }
 
+// run_string tokenizes, parses, and executes the given string in an isolated subscope.
+// see also: run_string
 @[inline]
 pub fn (mut i Interpreter) run_string_isolated(s string) Value {
 	mut t := tokenizer.Tokenizer{

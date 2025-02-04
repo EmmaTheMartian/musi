@@ -56,7 +56,7 @@ fn findall(mut scope Scope) Value {
 }
 
 @[inline]
-pub fn replace(mut scope Scope) Value {
+fn replace(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replace').str()
 	substr := scope.get_fn_arg[string]('substring', 'replace')
 	with := scope.get_fn_arg[string]('with', 'replace')
@@ -64,7 +64,7 @@ pub fn replace(mut scope Scope) Value {
 }
 
 @[inline]
-pub fn replaceonce(mut scope Scope) Value {
+fn replaceonce(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replaceonce').str()
 	substr := scope.get_fn_arg[string]('substring', 'replaceonce')
 	with := scope.get_fn_arg[string]('with', 'replaceonce')
@@ -72,7 +72,7 @@ pub fn replaceonce(mut scope Scope) Value {
 }
 
 @[inline]
-pub fn replaceeach(mut scope Scope) Value {
+fn replaceeach(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replaceeach').str()
 	substr := scope.get_fn_arg[string]('substring', 'replaceeach')
 	values := scope.get_fn_arg[[]Value]('values', 'replaceeach')
@@ -85,7 +85,7 @@ pub fn replaceeach(mut scope Scope) Value {
 }
 
 @[inline]
-pub fn replaceeachonce(mut scope Scope) Value {
+fn replaceeachonce(mut scope Scope) Value {
 	mut str := scope.get_fn_arg[string]('string', 'replaceeachonce').str()
 	substr := scope.get_fn_arg[string]('substring', 'replaceeachonce')
 	values := scope.get_fn_arg[[]Value]('values', 'replaceeachonce')
@@ -96,7 +96,7 @@ pub fn replaceeachonce(mut scope Scope) Value {
 }
 
 @[inline]
-pub fn format(mut scope Scope) Value {
+fn format(mut scope Scope) Value {
 	mut str := scope.get_fn_arg[string]('string', 'format').str()
 	values := scope.get_fn_arg[[]Value]('values', 'format')
 	for value in values {

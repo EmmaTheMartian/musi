@@ -1,3 +1,5 @@
+let testing = import(":testing")
+
 if false do
 	println('1: fail (if false)')
 end elseif false do
