@@ -2,12 +2,12 @@
 
 ## in progress
 
+- drastically improve error messages
 - stdlib
 - guides
 
 ## planning
 
-- drastically improve error messages
 - list index operator
 
 ## ideas

@@ -1,6 +1,10 @@
+<div align='center'>
+
 # musi
 
 [getting started](doc/getting-started.md) - [embedding guide](doc/embedding.md)
+
+</div>
 
 > noun: game, art
 >
@@ -15,6 +19,9 @@ creating cohesive domain specific languages.
 
 musi is pretty heavily inspired by lua, although still feels quite different
 from it.
+
+> [!WARNING]
+> musi is still in beta, expect bugs and quirks right now!
 
 ## artistic?
 
@@ -42,10 +49,10 @@ source. luckily that is really easy:
 git clone https://github.com/emmathemartian/musi
 cd musi
 
-# With clockwork
+# with clockwork
 clockwork install
 
-# Without clockwork
+# without clockwork
 v -prod src/main.v
 # executable is at src/main, you can symlink it somewhere on path now if you want:
 ln -s $(pwd)/src/main ~/.local/bin/musi
