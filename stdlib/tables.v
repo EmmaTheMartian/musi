@@ -3,19 +3,19 @@ module stdlib
 import interpreter { Scope, Value, ValueNativeFunction }
 
 @[inline]
-fn keys(mut scope Scope) Value {
+fn tables_keys(mut scope Scope) Value {
 	table := scope.get_fn_arg[map[string]Value]('table', 'keys')
 	return table.keys().map(|it| Value(it))
 }
 
 @[inline]
-fn values(mut scope Scope) Value {
+fn tables_values(mut scope Scope) Value {
 	table := scope.get_fn_arg[map[string]Value]('table', 'values')
 	return table.values()
 }
 
 @[inline]
-fn pairs(mut scope Scope) Value {
+fn tables_pairs(mut scope Scope) Value {
 	table := scope.get_fn_arg[map[string]Value]('table', 'pairs')
 	mut pairs := []Value{}
 	for key, value in table {
@@ -28,7 +28,7 @@ fn pairs(mut scope Scope) Value {
 }
 
 @[inline]
-fn ipairs(mut scope Scope) Value {
+fn tables_ipairs(mut scope Scope) Value {
 	table := scope.get_fn_arg[map[string]Value]('table', 'pairs')
 	mut pairs := []Value{}
 	mut i := 0
@@ -44,7 +44,7 @@ fn ipairs(mut scope Scope) Value {
 }
 
 @[inline]
-fn tableset(mut scope Scope) Value {
+fn tables_set(mut scope Scope) Value {
 	mut table := scope.get_fn_arg_ptr[map[string]Value]('table', 'set')
 	key := scope.get_fn_arg[string]('key', 'set')
 	value := scope.get_fn_arg_raw('value', 'set')
@@ -55,7 +55,7 @@ fn tableset(mut scope Scope) Value {
 }
 
 @[inline]
-fn tableget(mut scope Scope) Value {
+fn tables_get(mut scope Scope) Value {
 	mut table := scope.get_fn_arg[map[string]Value]('table', 'get')
 	key := scope.get_fn_arg[string]('key', 'get')
 	return table[key] or { scope.throw('failed to index table with key `${key}`') }
@@ -64,27 +64,27 @@ fn tableget(mut scope Scope) Value {
 pub const tables_module = {
 	'keys':   Value(ValueNativeFunction{
 		args: ['table']
-		code: keys
+		code: tables_keys
 	})
 	'values': ValueNativeFunction{
 		args: ['table']
-		code: values
+		code: tables_values
 	}
 	'pairs':  ValueNativeFunction{
 		args: ['table']
-		code: pairs
+		code: tables_pairs
 	}
 	'ipairs': ValueNativeFunction{
 		args: ['table']
-		code: ipairs
+		code: tables_ipairs
 	}
 	'set':    ValueNativeFunction{
 		args: ['table', 'key', 'value']
-		code: tableset
+		code: tables_set
 	}
 	'get':    ValueNativeFunction{
 		args: ['table', 'key']
-		code: tableget
+		code: tables_get
 	}
 }
 

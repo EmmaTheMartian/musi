@@ -4,19 +4,19 @@ import interpreter { Scope, Value, ValueNativeFunction }
 import strings
 
 @[inline]
-fn repeatstring(mut scope Scope) Value {
+fn strings_repeatstring(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'repeatstring')
 	count := int(scope.get_fn_arg[f64]('count', 'repeatstring'))
 	return strings.repeat_string(str, count)
 }
 
 @[inline]
-fn tochar(mut scope Scope) Value {
+fn strings_tochar(mut scope Scope) Value {
 	return u8(scope.get_fn_arg[f64]('number', 'tochar')).ascii_str()
 }
 
 @[inline]
-fn charat(mut scope Scope) Value {
+fn strings_charat(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'charat')
 	index := int(scope.get_fn_arg[f64]('index', 'charat'))
 	unsafe {
@@ -25,17 +25,17 @@ fn charat(mut scope Scope) Value {
 }
 
 @[inline]
-fn strlength(mut scope Scope) Value {
+fn strings_strlength(mut scope Scope) Value {
 	return f64(scope.get_fn_arg[string]('string', 'length').len)
 }
 
 @[inline]
-fn chars(mut scope Scope) Value {
+fn strings_chars(mut scope Scope) Value {
 	return scope.get_fn_arg[string]('string', 'length').runes().map(|it| Value(it.str()))
 }
 
 @[inline]
-fn findall(mut scope Scope) Value {
+fn strings_findall(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'findall')
 	substr := scope.get_fn_arg[string]('substring', 'findall')
 
@@ -56,7 +56,7 @@ fn findall(mut scope Scope) Value {
 }
 
 @[inline]
-fn replace(mut scope Scope) Value {
+fn strings_replace(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replace').str()
 	substr := scope.get_fn_arg[string]('substring', 'replace')
 	with := scope.get_fn_arg[string]('with', 'replace')
@@ -64,7 +64,7 @@ fn replace(mut scope Scope) Value {
 }
 
 @[inline]
-fn replaceonce(mut scope Scope) Value {
+fn strings_replaceonce(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replaceonce').str()
 	substr := scope.get_fn_arg[string]('substring', 'replaceonce')
 	with := scope.get_fn_arg[string]('with', 'replaceonce')
@@ -72,7 +72,7 @@ fn replaceonce(mut scope Scope) Value {
 }
 
 @[inline]
-fn replaceeach(mut scope Scope) Value {
+fn strings_replaceeach(mut scope Scope) Value {
 	str := scope.get_fn_arg[string]('string', 'replaceeach').str()
 	substr := scope.get_fn_arg[string]('substring', 'replaceeach')
 	values := scope.get_fn_arg[[]Value]('values', 'replaceeach')
@@ -85,7 +85,7 @@ fn replaceeach(mut scope Scope) Value {
 }
 
 @[inline]
-fn replaceeachonce(mut scope Scope) Value {
+fn strings_replaceeachonce(mut scope Scope) Value {
 	mut str := scope.get_fn_arg[string]('string', 'replaceeachonce').str()
 	substr := scope.get_fn_arg[string]('substring', 'replaceeachonce')
 	values := scope.get_fn_arg[[]Value]('values', 'replaceeachonce')
@@ -96,7 +96,7 @@ fn replaceeachonce(mut scope Scope) Value {
 }
 
 @[inline]
-fn format(mut scope Scope) Value {
+fn strings_format(mut scope Scope) Value {
 	mut str := scope.get_fn_arg[string]('string', 'format').str()
 	values := scope.get_fn_arg[[]Value]('values', 'format')
 	for value in values {
@@ -110,47 +110,47 @@ fn format(mut scope Scope) Value {
 pub const strings_module = {
 	'repeatstring':    Value(ValueNativeFunction{
 		args: ['string', 'count']
-		code: repeatstring
+		code: strings_repeatstring
 	})
 	'tochar':          ValueNativeFunction{
 		args: ['number']
-		code: tochar
+		code: strings_tochar
 	}
 	'charat':          ValueNativeFunction{
 		args: ['string', 'index']
-		code: charat
+		code: strings_charat
 	}
 	'length':          ValueNativeFunction{
 		args: ['string']
-		code: strlength
+		code: strings_strlength
 	}
 	'chars':           ValueNativeFunction{
 		args: ['string']
-		code: chars
+		code: strings_chars
 	}
 	'findall':         ValueNativeFunction{
 		args: ['string', 'substring']
-		code: findall
+		code: strings_findall
 	}
 	'replace':         ValueNativeFunction{
 		args: ['string', 'substring', 'with']
-		code: replace
+		code: strings_replace
 	}
 	'replaceonce':     ValueNativeFunction{
 		args: ['string', 'substring', 'with']
-		code: replaceonce
+		code: strings_replaceonce
 	}
 	'replaceeach':     ValueNativeFunction{
 		args: ['string', 'substring', 'values']
-		code: replaceeach
+		code: strings_replaceeach
 	}
 	'replaceeachonce': ValueNativeFunction{
 		args: ['string', 'substring', 'values']
-		code: replaceeachonce
+		code: strings_replaceeachonce
 	}
 	'format':          ValueNativeFunction{
 		args: ['string', 'values']
-		code: format
+		code: strings_format
 	}
 }
 

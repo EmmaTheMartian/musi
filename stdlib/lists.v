@@ -3,7 +3,7 @@ module stdlib
 import interpreter { IFunctionValue, Scope, Value, ValueFunction, ValueNativeFunction }
 
 @[inline]
-fn append(mut scope Scope) Value {
+fn lists_append(mut scope Scope) Value {
 	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'append')
 	value := scope.get_fn_arg_raw('value', 'append')
 	list << value
@@ -11,7 +11,7 @@ fn append(mut scope Scope) Value {
 }
 
 @[inline]
-fn prepend(mut scope Scope) Value {
+fn lists_prepend(mut scope Scope) Value {
 	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'prepend')
 	value := scope.get_fn_arg_raw('value', 'prepend')
 	list.prepend(value)
@@ -19,13 +19,13 @@ fn prepend(mut scope Scope) Value {
 }
 
 @[inline]
-fn pop(mut scope Scope) Value {
+fn lists_pop(mut scope Scope) Value {
 	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'pop')
 	return list.pop()
 }
 
 @[inline]
-fn delete(mut scope Scope) Value {
+fn lists_delete(mut scope Scope) Value {
 	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'delete')
 	index := int(scope.get_fn_arg[f64]('index', 'delete'))
 	list.delete(index)
@@ -33,14 +33,14 @@ fn delete(mut scope Scope) Value {
 }
 
 @[inline]
-fn clear(mut scope Scope) Value {
+fn lists_clear(mut scope Scope) Value {
 	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'clear')
 	list.clear()
 	return interpreter.null_value
 }
 
 @[inline]
-fn set(mut scope Scope) Value {
+fn lists_set(mut scope Scope) Value {
 	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'set')
 	index := int(scope.get_fn_arg[f64]('index', 'set'))
 	value := scope.get_fn_arg_raw('value', 'set')
@@ -51,14 +51,14 @@ fn set(mut scope Scope) Value {
 }
 
 @[inline]
-fn get(mut scope Scope) Value {
+fn lists_get(mut scope Scope) Value {
 	mut list := scope.get_fn_arg[[]Value]('list', 'get')
 	index := int(scope.get_fn_arg[f64]('index', 'get'))
 	return list[index]
 }
 
 @[inline]
-fn each(mut scope Scope) Value {
+fn lists_each(mut scope Scope) Value {
 	list := scope.get_fn_arg[[]Value]('list', 'each')
 	action := scope.get_fn_arg_raw('action', 'each')
 
@@ -80,7 +80,7 @@ fn each(mut scope Scope) Value {
 }
 
 @[inline]
-fn ieach(mut scope Scope) Value {
+fn lists_ieach(mut scope Scope) Value {
 	list := scope.get_fn_arg[[]Value]('list', 'ieach')
 	action := scope.get_fn_arg_raw('action', 'ieach')
 
@@ -103,7 +103,7 @@ fn ieach(mut scope Scope) Value {
 }
 
 @[inline]
-fn range(mut scope Scope) Value {
+fn lists_range(mut scope Scope) Value {
 	from := int(scope.get_fn_arg[f64]('from', 'range'))
 	to := int(scope.get_fn_arg[f64]('to', 'range'))
 	mut range := []Value{len: to - from, cap: to - from, init: Value{}}
@@ -114,14 +114,14 @@ fn range(mut scope Scope) Value {
 }
 
 @[inline]
-fn listof(mut scope Scope) Value {
+fn lists_listof(mut scope Scope) Value {
 	size := int(scope.get_fn_arg[f64]('size', 'listof'))
 	of := scope.get_fn_arg_raw('of', 'listof')
 	return []Value{len: size, cap: size, init: of}
 }
 
 @[inline]
-fn filter(mut scope Scope) Value {
+fn lists_filter(mut scope Scope) Value {
 	to_filter := scope.get_fn_arg[[]Value]('list', 'filter')
 	predicate := scope.get_fn_arg_raw('predicate', 'filter')
 	mut filtered := []Value{}
@@ -134,7 +134,7 @@ fn filter(mut scope Scope) Value {
 }
 
 @[inline]
-fn map_(mut scope Scope) Value {
+fn lists_map(mut scope Scope) Value {
 	to_map := scope.get_fn_arg[[]Value]('list', 'map')
 	predicate := scope.get_fn_arg_raw('predicate', 'map')
 	mut mapped := []Value{}
@@ -145,23 +145,23 @@ fn map_(mut scope Scope) Value {
 }
 
 @[inline]
-fn length(mut scope Scope) Value {
+fn lists_length(mut scope Scope) Value {
 	return f64(scope.get_fn_arg[[]Value]('list', 'length').len)
 }
 
 @[inline]
-fn reversed(mut scope Scope) Value {
+fn lists_reversed(mut scope Scope) Value {
 	return scope.get_fn_arg[[]Value]('list', 'reversed').reverse()
 }
 
 @[inline]
-fn index(mut scope Scope) Value {
+fn lists_index(mut scope Scope) Value {
 	return f64(scope.get_fn_arg[[]Value]('list', 'index').index(scope.get_fn_arg_raw('it',
 		'index')))
 }
 
 @[inline]
-fn contains(mut scope Scope) Value {
+fn lists_contains(mut scope Scope) Value {
 	return scope.get_fn_arg[[]Value]('list', 'index').contains(scope.get_fn_arg_raw('it',
 		'index'))
 }
@@ -169,71 +169,71 @@ fn contains(mut scope Scope) Value {
 pub const lists_module = {
 	'append':    Value(ValueNativeFunction{
 		args: ['list', 'value']
-		code: append
+		code: lists_append
 	})
 	'prepend':   ValueNativeFunction{
 		args: ['list', 'value']
-		code: prepend
+		code: lists_prepend
 	}
 	'pop':       ValueNativeFunction{
 		args: ['list']
-		code: pop
+		code: lists_pop
 	}
 	'delete':    ValueNativeFunction{
 		args: ['list', 'index']
-		code: delete
+		code: lists_delete
 	}
 	'clear':     ValueNativeFunction{
 		args: ['list']
-		code: clear
+		code: lists_clear
 	}
 	'set':       ValueNativeFunction{
 		args: ['list', 'index', 'value']
-		code: set
+		code: lists_set
 	}
 	'get':       ValueNativeFunction{
 		args: ['list', 'index']
-		code: get
+		code: lists_get
 	}
 	'each':      ValueNativeFunction{
 		args: ['list', 'action']
-		code: each
+		code: lists_each
 	}
 	'ieach':     ValueNativeFunction{
 		args: ['list', 'action']
-		code: ieach
+		code: lists_ieach
 	}
 	'range':     ValueNativeFunction{
 		args: ['from', 'to']
-		code: range
+		code: lists_range
 	}
 	'listof':    ValueNativeFunction{
 		args: ['size', 'of']
-		code: listof
+		code: lists_listof
 	}
 	'filter':    ValueNativeFunction{
 		args: ['list', 'predicate']
-		code: filter
+		code: lists_filter
 	}
 	'map':       ValueNativeFunction{
 		args: ['list', 'predicate']
-		code: map_
+		code: lists_map
 	}
 	'length':    ValueNativeFunction{
 		args: ['list']
-		code: length
+		code: lists_length
 	}
 	'revsersed': ValueNativeFunction{
 		args: ['list']
-		code: reversed
+		code: lists_reversed
 	}
 	'index':     ValueNativeFunction{
 		args: ['list', 'it']
-		code: index
+		code: lists_index
 	}
 	'contains':  ValueNativeFunction{
 		args: ['list', 'it']
-		code: contains
+		code: lists_contains
 	}
 }
 

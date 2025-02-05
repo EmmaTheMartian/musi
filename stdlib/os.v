@@ -18,11 +18,6 @@ fn os_walk(mut scope Scope) Value {
 	return os.walk_ext(path, '').map(|it| Value(it))
 }
 
-@[inline]
-fn os_exists(mut scope Scope) Value {
-	return os.exists(scope.get_fn_arg[string]('path', 'exists'))
-}
-
 pub const os_module = {
 	'ls':     Value(ValueNativeFunction{
 		args: ['path']
@@ -32,10 +27,6 @@ pub const os_module = {
 		args: ['path']
 		code: os_walk
 	})
-	'exists': ValueNativeFunction{
-		args: ['path']
-		code: os_exists
-	}
 }
 
 // apply_os applies the `os` module to the given scope.

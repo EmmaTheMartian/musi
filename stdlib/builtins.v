@@ -3,17 +3,17 @@ module stdlib
 import interpreter { Scope, Value, ValueFunction, ValueNativeFunction, ValueNull }
 
 @[inline]
-fn import_(mut scope Scope) Value {
+fn builtin_import(mut scope Scope) Value {
 	return scope.import(scope.get_fn_arg[string]('module', 'import'))
 }
 
 @[inline]
-fn tostring(mut scope Scope) Value {
+fn builtin_tostring(mut scope Scope) Value {
 	return scope.get_fn_arg_raw('thing', 'tostring').to_string()
 }
 
 @[inline]
-fn tonumber(mut scope Scope) Value {
+fn builtin_tonumber(mut scope Scope) Value {
 	thing := scope.get_fn_arg_raw('thing', 'tonumber')
 	match thing {
 		string {
@@ -29,7 +29,7 @@ fn tonumber(mut scope Scope) Value {
 }
 
 @[inline]
-fn typeof_(mut scope Scope) Value {
+fn builtin_typeof(mut scope Scope) Value {
 	return match scope.get_fn_arg_raw('it', 'typeof') {
 		string { 'string' }
 		f64 { 'float' }
@@ -44,7 +44,7 @@ fn typeof_(mut scope Scope) Value {
 }
 
 @[inline]
-fn print_(mut scope Scope) Value {
+fn builtin_print(mut scope Scope) Value {
 	text := scope.get_fn_arg_raw('text', 'print')
 	print(scope.invoke('tostring', {
 		'thing': text
@@ -53,7 +53,7 @@ fn print_(mut scope Scope) Value {
 }
 
 @[inline]
-fn println_(mut scope Scope) Value {
+fn builtin_println(mut scope Scope) Value {
 	text := scope.get_fn_arg_raw('text', 'println')
 	println(scope.invoke('tostring', {
 		'thing': text
@@ -62,7 +62,7 @@ fn println_(mut scope Scope) Value {
 }
 
 @[inline]
-fn fprint_(mut scope Scope) Value {
+fn builtin_fprint(mut scope Scope) Value {
 	text := scope.get_fn_arg[string]('text', 'fprint')
 	values := scope.get_fn_arg[[]Value]('values', 'fprint')
 	func := (scope.get('strings') or {
@@ -76,7 +76,7 @@ fn fprint_(mut scope Scope) Value {
 }
 
 @[inline]
-fn fprintln_(mut scope Scope) Value {
+fn builtin_fprintln(mut scope Scope) Value {
 	text := scope.get_fn_arg[string]('text', 'fprintln')
 	values := scope.get_fn_arg[[]Value]('values', 'fprintln')
 	func := (scope.get('strings') or {
@@ -90,7 +90,7 @@ fn fprintln_(mut scope Scope) Value {
 }
 
 @[inline]
-fn panic_(mut scope Scope) Value {
+fn builtin_panic(mut scope Scope) Value {
 	text := scope.get_fn_arg_raw('text', 'panic')
 	scope.throw(scope.invoke('tostring', {
 		'thing': text
@@ -99,50 +99,50 @@ fn panic_(mut scope Scope) Value {
 }
 
 @[inline]
-fn gettrace(mut scope Scope) Value {
+fn builtin_gettrace(mut scope Scope) Value {
 	return scope.interpreter.stacktrace.array().map(|it| Value('${it.file}:${it.source}:${it.line}:${it.column}'))
 }
 
 pub const builtins = {
 	'import':   Value(ValueNativeFunction{
 		args: ['module']
-		code: import_
+		code: builtin_import
 	})
 	'tostring': ValueNativeFunction{
 		args: ['thing']
-		code: tostring
+		code: builtin_tostring
 	}
 	'tonumber': ValueNativeFunction{
 		args: ['thing']
-		code: tonumber
+		code: builtin_tonumber
 	}
 	'typeof':   ValueNativeFunction{
 		args: ['it']
-		code: typeof_
+		code: builtin_typeof
 	}
 	'print':    ValueNativeFunction{
 		args: ['text']
-		code: print_
+		code: builtin_print
 	}
 	'println':  ValueNativeFunction{
 		args: ['text']
-		code: println_
+		code: builtin_println
 	}
 	'fprint':   ValueNativeFunction{
 		args: ['text', 'values']
-		code: fprint_
+		code: builtin_fprint
 	}
 	'fprintln': ValueNativeFunction{
 		args: ['text', 'values']
-		code: fprintln_
+		code: builtin_fprintln
 	}
 	'panic':    ValueNativeFunction{
 		args: ['text']
-		code: panic_
+		code: builtin_panic
 	}
 	'gettrace': ValueNativeFunction{
 		args: []
-		code: gettrace
+		code: builtin_gettrace
 	}
 }
 

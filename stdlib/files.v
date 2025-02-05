@@ -4,28 +4,28 @@ import interpreter { Scope, Value, ValueNativeFunction }
 import os
 
 @[inline]
-fn open(mut scope Scope) Value {
+fn files_open(mut scope Scope) Value {
 	path := scope.get_fn_arg[string]('path', 'open')
 	it := os.open(path) or { scope.throw('open: file does not exist: `${path}`') }
 	return Value(voidptr(&it))
 }
 
 @[inline]
-fn create(mut scope Scope) Value {
+fn files_create(mut scope Scope) Value {
 	path := scope.get_fn_arg[string]('path', 'create')
 	it := os.create(path) or { scope.throw('create: filaed to create file: `${path}`') }
 	return Value(voidptr(&it))
 }
 
 @[inline]
-fn close(mut scope Scope) Value {
+fn files_close(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'close')) }
 	file.close()
 	return interpreter.null_value
 }
 
 @[inline]
-fn write(mut scope Scope) Value {
+fn files_write(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'write')) }
 	data := scope.get_fn_arg[string]('data', 'write')
 	file.write_string(data) or { scope.throw('failed to write string to file. (v error: ${err})') }
@@ -33,20 +33,20 @@ fn write(mut scope Scope) Value {
 }
 
 @[inline]
-fn flush(mut scope Scope) Value {
+fn files_flush(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'flush')) }
 	file.flush()
 	return interpreter.null_value
 }
 
 @[inline]
-fn getcursorpos(mut scope Scope) Value {
+fn files_getcursorpos(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'getcursorpos')) }
 	return f64(file.tell() or { panic(err) })
 }
 
 @[inline]
-fn setcursorpos(mut scope Scope) Value {
+fn files_setcursorpos(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'setcursorpos')) }
 	pos := int(scope.get_fn_arg[f64]('pos', 'setcursorpos'))
 	file.seek(pos, .start) or { panic(err) }
@@ -54,7 +54,7 @@ fn setcursorpos(mut scope Scope) Value {
 }
 
 @[inline]
-fn offsetcursorpos(mut scope Scope) Value {
+fn files_offsetcursorpos(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'setcursorpos')) }
 	pos := int(scope.get_fn_arg[f64]('pos', 'setcursorpos'))
 	file.seek(pos, .current) or { panic(err) }
@@ -62,14 +62,14 @@ fn offsetcursorpos(mut scope Scope) Value {
 }
 
 @[inline]
-fn read(mut scope Scope) Value {
+fn files_read(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'read')) }
 	bytes := int(scope.get_fn_arg[f64]('bytes', 'read'))
 	return file.read_bytes(bytes).bytestr()
 }
 
 @[inline]
-fn size(mut scope Scope) Value {
+fn files_size(mut scope Scope) Value {
 	of := scope.get_fn_arg_raw('of', 'size')
 	if of is string {
 		if !os.exists(of) {
@@ -89,46 +89,55 @@ fn size(mut scope Scope) Value {
 	}
 }
 
+@[inline]
+fn files_exists(mut scope Scope) Value {
+	return os.exists(scope.get_fn_arg[string]('path', 'exists'))
+}
+
 pub const files_module = {
 	'open':            Value(ValueNativeFunction{
 		args: ['path']
-		code: open
+		code: files_open
 	})
 	'create':          ValueNativeFunction{
 		args: ['path']
-		code: create
+		code: files_create
 	}
 	'close':           ValueNativeFunction{
 		args: ['file']
-		code: close
+		code: files_close
 	}
 	'write':           ValueNativeFunction{
 		args: ['file', 'data']
-		code: write
+		code: files_write
 	}
 	'flush':           ValueNativeFunction{
 		args: ['file']
-		code: flush
+		code: files_flush
 	}
 	'getcursorpos':    ValueNativeFunction{
 		args: ['file']
-		code: getcursorpos
+		code: files_getcursorpos
 	}
 	'setcursorpos':    ValueNativeFunction{
 		args: ['file', 'pos']
-		code: setcursorpos
+		code: files_setcursorpos
 	}
 	'offsetcursorpos': ValueNativeFunction{
 		args: ['file', 'pos']
-		code: offsetcursorpos
+		code: files_offsetcursorpos
 	}
 	'read':            ValueNativeFunction{
 		args: ['file', 'bytes']
-		code: read
+		code: files_read
 	}
 	'size':            ValueNativeFunction{
 		args: ['of']
-		code: size
+		code: files_size
+	}
+	'exists':          ValueNativeFunction{
+		args: ['path']
+		code: files_exists
 	}
 }
 
