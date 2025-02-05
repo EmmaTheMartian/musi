@@ -57,6 +57,12 @@ task:test.samples.prod = {
 	]
 }
 
+task:test.musi = {
+	help = 'Tests everything in the `tests` folder'
+	category = 'test'
+	run = '${v} ${v_args} -g run ${v_main} run ${musi_flags} tests/all.musi'
+}
+
 task:install = {
 	help = 'Installs the musi CLI to ~/.local/bin/musi'
 	category = 'install'
