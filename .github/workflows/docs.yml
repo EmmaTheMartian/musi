@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: 'musi/'
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
@@ -35,10 +37,11 @@ jobs:
           stable: true
       - name: Generate docs
         run: v doc -f html -o apidocs/ -readme -m .
+        working-directory: musi/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'apidocs'
+          path: 'musi/'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
