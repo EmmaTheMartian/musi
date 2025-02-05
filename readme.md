@@ -2,7 +2,9 @@
 
 # musi
 
-[getting started](doc/getting-started.md) - [embedding guide](doc/embedding.md)
+[documentation](https://emmathemartian.github.io/musi/) -
+[getting started](https://github.com/emmathemartian/musi/tree/main/doc/getting-started.md) -
+[embedding guide](https://github.com/emmathemartian/musi/tree/main/doc/embedding.md)
 
 </div>
 

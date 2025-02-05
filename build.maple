@@ -2,7 +2,7 @@ plugins = [ 'v' ]
 
 config:v_main = 'src/main.v'
 config:musi_flags = '-syntax-debug'
-config:sources = 'ast/ interpreter/ parser/ src/ stdlib/ tokenizer/ musi.v'
+config:sources = 'ast/ interpreter/ parser/ repl/ src/ stdlib/ tokenizer/ musi.v'
 config:test_results_dir = 'testresults'
 
 task:build.debug = {
@@ -71,6 +71,12 @@ task:install = {
 		'rm ~/.local/bin/musi',
 		'ln -s $(pwd)/build/main ~/.local/bin/musi'
 	]
+}
+
+task:doc = {
+	help = 'Generates HTML documentation for the musi API'
+	category = 'docs'
+	run = '${v} doc -f html -o apidocs/ -readme -m .'
 }
 
 task:vet = {
