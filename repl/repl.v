@@ -16,7 +16,8 @@ pub mut:
 @[inline]
 pub fn REPL.new() REPL {
 	return REPL{
-		vm: interpreter.Interpreter.new('<repl>', '.', interpreter.InterpreterOptions{}, fn (mut scope interpreter.Scope) {
+		vm: interpreter.Interpreter.new('<repl>', '.', interpreter.InterpreterOptions{},
+			fn (mut scope interpreter.Scope) {
 			stdlib.apply_stdlib(mut scope)
 		})
 	}
@@ -25,9 +26,7 @@ pub fn REPL.new() REPL {
 // run runs the given REPL.
 pub fn (mut it REPL) run() {
 	for {
-		line := it.rl.read_line('> ') or {
-			panic('failed to invoke read_line')
-		}
+		line := it.rl.read_line('> ') or { panic('failed to invoke read_line') }
 
 		if line[0] == `\\` {
 			if line == '\\q' {

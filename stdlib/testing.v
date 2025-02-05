@@ -9,7 +9,7 @@ pub mut:
 }
 
 pub const testing_module = {
-	'test': Value(ValueNativeFunction{
+	'test':      Value(ValueNativeFunction{
 		args: ['name', 'actual', 'expected']
 		code: fn (mut scope Scope) Value {
 			name := scope.get_fn_arg[string]('name', '<test>')
@@ -25,7 +25,7 @@ pub const testing_module = {
 			}
 		}
 	})
-	'context': ValueNativeFunction{
+	'context':   ValueNativeFunction{
 		args: ['name', 'tests']
 		code: fn (mut scope Scope) Value {
 			name := scope.get_fn_arg[string]('name', 'context')
@@ -34,13 +34,11 @@ pub const testing_module = {
 			mut failed := 0
 			for test in tests {
 				if test is bool {
-					if test { passed++ }
-					else { failed++ }
+					if test { passed++ } else { failed++ }
 				} else if test is ValueFunction {
 					result := test.run(mut scope, {}, '<test:lambda>')
 					if result is bool {
-						if result { passed++ }
-						else { failed++ }
+						if result { passed++ } else { failed++ }
 					} else {
 						scope.throw('testing.context requires lambdas to return a boolean')
 					}

@@ -6,9 +6,7 @@ import interpreter { Scope, Value, ValueNativeFunction }
 @[inline]
 fn os_ls(mut scope Scope) Value {
 	path := scope.get_fn_arg[string]('path', 'ls')
-	return os.ls(path) or {
-		scope.throw('ls: no such directory: ${path}')
-	}.map(|it| Value(it))
+	return os.ls(path) or { scope.throw('ls: no such directory: ${path}') }.map(|it| Value(it))
 }
 
 @[inline]
@@ -25,7 +23,7 @@ fn os_exists(mut scope Scope) Value {
 	return os.exists(scope.get_fn_arg[string]('path', 'exists'))
 }
 
-pub const os_module := {
+pub const os_module = {
 	'ls':     Value(ValueNativeFunction{
 		args: ['path']
 		code: os_ls

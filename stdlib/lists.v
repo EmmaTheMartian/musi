@@ -156,12 +156,14 @@ fn reversed(mut scope Scope) Value {
 
 @[inline]
 fn index(mut scope Scope) Value {
-	return f64(scope.get_fn_arg[[]Value]('list', 'index').index(scope.get_fn_arg_raw('it', 'index')))
+	return f64(scope.get_fn_arg[[]Value]('list', 'index').index(scope.get_fn_arg_raw('it',
+		'index')))
 }
 
 @[inline]
 fn contains(mut scope Scope) Value {
-	return scope.get_fn_arg[[]Value]('list', 'index').contains(scope.get_fn_arg_raw('it', 'index'))
+	return scope.get_fn_arg[[]Value]('list', 'index').contains(scope.get_fn_arg_raw('it',
+		'index'))
 }
 
 pub const lists_module = {

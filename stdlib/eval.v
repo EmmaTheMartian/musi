@@ -20,7 +20,7 @@ fn eval_runstring(mut scope Scope) Value {
 }
 
 pub const eval_module = {
-	'runfile': Value(ValueNativeFunction{
+	'runfile':   Value(ValueNativeFunction{
 		args: ['path']
 		code: eval_runfile
 	})

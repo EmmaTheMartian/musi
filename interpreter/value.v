@@ -10,14 +10,14 @@ pub interface IFunctionValue {
 
 pub struct ValueNativeFunction implements IFunctionValue {
 pub:
-	code   fn (mut Scope) Value @[required]
-	args   []string
+	code fn (mut Scope) Value @[required]
+	args []string
 }
 
 // run runs the native function using `args` in subscope of the provided scope, then returns the function's returned value.
 // `tracer` is used to add the function's name to the stacktrace.
 pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value, tracer string) Value {
-	s.interpreter.push_trace(s.file, tracer, -1, -1) //TODO: add line/column
+	s.interpreter.push_trace(s.file, tracer, -1, -1) // TODO: add line/column
 	mut scope := s.make_child()
 	// add args to scope
 	for arg, val in args {
@@ -30,14 +30,14 @@ pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value, trace
 
 pub struct ValueFunction implements IFunctionValue {
 pub:
-	code   NodeBlock
-	args   []string
+	code NodeBlock
+	args []string
 }
 
 // run runs the function using `args` in subscope of the provided scope, then returns the function's returned value.
 // `tracer` is used to add the function's name to the stacktrace.
 pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value, tracer string) Value {
-	s.interpreter.push_trace(s.file, tracer, -1, -1) //TODO: add line/column
+	s.interpreter.push_trace(s.file, tracer, -1, -1) // TODO: add line/column
 	mut scope := s.make_child()
 	// add args to scope
 	for arg, val in args {
@@ -106,6 +106,8 @@ pub fn (v &Value) to_string() string {
 		ValueNull {
 			return 'null'
 		}
-		voidptr { return 'voidptr' }
+		voidptr {
+			return 'voidptr'
+		}
 	}
 }
