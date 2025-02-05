@@ -1,6 +1,7 @@
 let skipped = [
 	'tests/all.musi',
 	'tests/import/b.musi',
+	'tests/stdlib/eval/hello.musi',
 ]
 
 let results = []

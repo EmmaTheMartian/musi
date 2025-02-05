@@ -56,3 +56,32 @@ pub fn (scope &Scope) get_fn_arg_raw_ptr(name string, fnname string) &Value {
 		panic('musi: ${fnname}: argument `${name}` not provided')
 	}
 }
+
+pub struct Module {
+pub:
+	name string
+}
+
+pub fn (mod &Module) apply(mut scope Scope) {
+	mut functions := map[string]Value{}
+	$for method in mod.methods {
+		mut args := []string{}
+		$for attr in method.attributes {
+			if attr.name == 'params' {
+				for param in attr.arg.split(',') {
+					args << param.trim_space()
+				}
+			}
+		}
+		if method.return_type is Value {
+		} else {
+			panic('error: module functions must return Value')
+		}
+		name := method.name
+		functions[name] = ValueNativeFunction{
+			args: args
+			code: mod.$name
+		}
+	}
+	scope.new(mod.name, functions)
+}

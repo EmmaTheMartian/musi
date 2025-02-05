@@ -1,0 +1,4 @@
+testing.context('stdlib/eval/eval', [
+	testing.test('runstring', eval.runstring('return "Hello, World!"'), 'Hello, World!'),
+	testing.test('runfile', eval.runfile('tests/stdlib/eval/hello.musi'), 'Hello, World!')
+])
