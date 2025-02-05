@@ -1,6 +1,9 @@
 name: Build and deploy content to Pages
 
 on:
+  push:
+    paths:
+      - '.github/workflows/docs.yml'
   workflow_run:
     workflows: [test musi]
     types: [completed]
