@@ -41,3 +41,24 @@ lacks and has. here is the rundown:
 		println(it)
 	end)
 	```
+
+## installation
+
+installing musi is very simple. you can either clone from source, or download
+the latest build artifact.
+
+i will show the source option here:
+
+```sh
+git clone https://github.com/emmathemartian/musi
+cd musi
+
+# with clockwork
+clockwork install
+
+# without clockwork
+v -prod src/main.v
+ln -s $(pwd)/src/main ~/.local/bin/musi
+```
+
+to update, all you have to do is `git pull` and then recompile

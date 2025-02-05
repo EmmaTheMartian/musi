@@ -56,6 +56,5 @@ clockwork install
 
 # without clockwork
 v -prod src/main.v
-# executable is at src/main, you can symlink it somewhere on path now if you want:
 ln -s $(pwd)/src/main ~/.local/bin/musi
 ```
