@@ -3,12 +3,6 @@ module parser
 import ast
 import tokenizer { Token, TokenKind }
 
-// operators where nested operators should be given to the leftmost operator instead of the rightmost.
-// nodes excluded from this list resolve as: 1 + 2 + 3 resolves to add(1, add(2, 3))
-// nodes in this list resolve as: 1 + 2 + 3 resolves to add(add(1, 2), 3)
-// for now, no operators need this.
-const operators_with_left_priority = []ast.Operator{}
-
 // same as
 // https://en.cppreference.com/w/c/language/operator_precedence
 const operator_precedence = {
@@ -569,11 +563,7 @@ fn (mut p Parser) check_for_operator(params ParseSingleParams, mut node ast.INod
 		}
 
 		next_node_has_priority := if mut next_node is ast.NodeOperator {
-			if next_node.kind in operators_with_left_priority {
-				true
-			} else {
-				precedence_of_node(next_node) > precedence_of_token(operator)
-			}
+			precedence_of_node(next_node) > precedence_of_token(operator)
 		} else {
 			false
 		}

@@ -5,13 +5,14 @@ import readline
 import interpreter
 import stdlib
 
-@[heap; noinit]
+@[heap]
 pub struct REPL {
 pub mut:
 	rl readline.Readline
 	vm interpreter.Interpreter
 }
 
+// REPL.new creates a new REPL, it uses the default interpreter options and applies the stdlib.
 @[inline]
 pub fn REPL.new() REPL {
 	return REPL{
@@ -21,6 +22,7 @@ pub fn REPL.new() REPL {
 	}
 }
 
+// run runs the given REPL.
 pub fn (mut it REPL) run() {
 	for {
 		line := it.rl.read_line('> ') or {
