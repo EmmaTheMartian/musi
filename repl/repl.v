@@ -28,6 +28,7 @@ pub fn (mut it REPL) run() {
 		line := it.rl.read_line('> ') or {
 			panic('failed to invoke read_line')
 		}
+
 		if line[0] == `\\` {
 			if line == '\\q' {
 				break
@@ -38,9 +39,16 @@ pub fn (mut it REPL) run() {
 			}
 			continue
 		}
+
 		result := it.vm.run_string(line)
+
 		if result != interpreter.null_value {
 			println(result.to_string())
+		}
+
+		if it.vm.root_scope.returned != none {
+			println(it.vm.root_scope.returned)
+			break
 		}
 	}
 }
