@@ -4,6 +4,23 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '.github/workflows/test.yml'
+      - 'ast/**.v'
+      - 'ast/**.md'
+      - 'interpreter/**.v'
+      - 'interpreter/**.md'
+      - 'parser/**.v'
+      - 'parser/**.md'
+      - 'repl/**.v'
+      - 'repl/**.md'
+      - 'src/**.v'
+      - 'src/**.md'
+      - 'stdlib/**.v'
+      - 'stdlib/**.md'
+      - 'tokenizer/**.v'
+      - 'tokenizer/**.md'
+      - 'main.v'
 
 permissions:
   contents: read
