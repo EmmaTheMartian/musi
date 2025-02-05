@@ -14,7 +14,7 @@
 >
 > verb: to amuse, to play, to have fun
 >
-> *(from toki pona)*
+> *(from [toki pona](https://tokipona.org)*
 
 musi is an artistic programming language for embedding into projects and
 creating cohesive domain specific languages.
