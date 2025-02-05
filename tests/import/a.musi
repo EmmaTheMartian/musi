@@ -1,2 +1,4 @@
-println(import("b.musi"))
-println(import("b.musi"))
+return testing.context('tests/import/a', [
+	testing.test('import 1', import('import/b.musi'), 'Hello, World!'),
+	testing.test('import 2', import('import/b.musi'), 'Hello, World!'),
+])

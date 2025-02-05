@@ -1,0 +1,33 @@
+let skipped = [
+	'tests/all.musi',
+	'tests/import/b.musi',
+]
+
+let results = []
+
+testing.context('all', [
+	fn do
+		os.walk('tests/') -> lists.each(fn it do
+			if lists.contains(skipped, it) do
+				return null
+			end
+			fprintln(': executing test: %', [it])
+			let result = testing.test(it, eval.runfile(it), true)
+			lists.append(results, {
+				file = it
+				result = result
+			})
+			return result
+		end)
+		return !results -> lists.filter(fn it do return !it.result end) -> lists.contains(false)
+	end
+])
+
+let failures = results -> lists.filter(fn it do return !it.result end)
+
+if lists.length(failures) > 0 do
+	fprintln('failed % tests:', [lists.length(failures)])
+	lists.each(failures, fn it do
+		fprintln('  - %', [it.file])
+	end)
+end

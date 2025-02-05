@@ -1,17 +1,3 @@
-let test = fn condition_name, condition, expected do
-	if condition == expected do
-		print(condition_name)
-		println(': pass')
-	end else do
-		print(condition_name)
-		print(': fail (expected ')
-		print(expected)
-		print(', got ')
-		print(condition)
-		println(')')
-	end
-end
-
 let gandalf = {
 	name = "Gandalf"
 	phrase = "You shall not pass!"
@@ -25,9 +11,11 @@ let gandalf = {
 	cool_fn = fn it do return it end
 }
 
-test('name', gandalf.name == 'Gandalf', true)
-test('phrase', gandalf.phrase == 'You shall not pass!', true)
-test('data', gandalf.data == { inventory = [ "Fancy Staff" ] }, true)
-test('test', gandalf.test == { a = 1, b = 2, c = 3 }, true)
-test('string-key', gandalf.'string-key' == 'string-value', true)
-test('cool_fn', gandalf.cool_fn('test') == 'test', true)
+return testing.context('syntax/tables', [
+	testing.test('name', gandalf.name == 'Gandalf', true),
+	testing.test('phrase', gandalf.phrase == 'You shall not pass!', true),
+	testing.test('data', gandalf.data == { inventory = [ "Fancy Staff" ] }, true),
+	testing.test('test', gandalf.test == { a = 1, b = 2, c = 3 }, true),
+	testing.test('string-key', gandalf.'string-key' == 'string-value', true),
+	testing.test('cool_fn', gandalf.cool_fn('test') == 'test', true)
+])

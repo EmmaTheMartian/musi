@@ -1,18 +1,15 @@
-print("1: ")
-"pass" -> print()
-println("")
+let pipe_goal = fn input do
+	return input == "pass"
+end
 
-let pass = fn do return "pass" end
-print("2: ")
-pass() -> print()
-println("")
+let pass = fn do return 'pass' end
 
 # ignored_param is here for debugging generated ASTs. It gives me an index to look at to ensure the parser ordered the operators right.
 let return_it = fn it, ignored_param do return it end
-print("3: ")
-pass() -> return_it(0) -> print()
-println("")
 
-print("4: ")
-pass() -> return_it(0) -> return_it(1) -> return_it(2) -> return_it(3) -> print()
-println("")
+return testing.context('operators/pipe', [
+	testing.test('pipe', 'pass' -> pipe_goal(), true),
+	testing.test('pipe from fn', pass() -> pipe_goal(), true),
+	testing.test('chained pipe', pass() -> return_it(0) -> pipe_goal(), true),
+	testing.test('really chained pipe', pass() -> return_it(0) -> return_it(1) -> return_it(2) -> return_it(3) -> pipe_goal(), true)
+])

@@ -1,41 +1,29 @@
-let test = fn condition_name, condition, expected do
-	if condition == expected do
-		print(condition_name)
-		println(': pass')
-	end else do
-		print(condition_name)
-		print(': fail (expected ')
-		print(expected)
-		print(', got ')
-		print(condition)
-		println(')')
-	end
-end
+return testing.context('operators/operators', [
+	testing.test('==', 1 == 1, true),
+	testing.test('!=', 1 != 2, true),
+	testing.test('>= (>)', 2 >= 1, true),
+	testing.test('>= (==)', 2 >= 2, true),
+	testing.test('<= (<)', 1 <= 2, true),
+	testing.test('<= (==)', 2 <= 2, true),
+	testing.test('<', 1 < 2, true),
+	testing.test('>', 2 > 1, true),
+	testing.test('&& (tt)', true && true, true),
+	testing.test('&& (tf)', true && false, false),
+	testing.test('&& (ff)', false && false, false),
+	testing.test('|| (tt)', true || true, true),
+	testing.test('|| (tf)', true || false, true),
+	testing.test('|| (ff)', false || false, false),
 
-test('==', 1 == 1, true)
-test('!=', 1 != 2, true)
-test('>= (>)', 2 >= 1, true)
-test('>= (==)', 2 >= 2, true)
-test('<= (<)', 1 <= 2, true)
-test('<= (==)', 2 <= 2, true)
-test('<', 1 < 2, true)
-test('>', 2 > 1, true)
-test('&& (tt)', true && true, true)
-test('&& (tf)', true && false, false)
-test('&& (ff)', false && false, false)
-test('|| (tt)', true || true, true)
-test('|| (tf)', true || false, true)
-test('|| (ff)', false || false, false)
+	testing.test('+', 1 + 2, 3),
+	testing.test('-', 3 - 2, 1),
+	testing.test('/', 3 / 2, 1.5),
+	testing.test('*', 3 * 2, 6),
+	testing.test('%', 4 % 2, 0),
 
-test('+', 1 + 2, 3)
-test('-', 3 - 2, 1)
-test('/', 3 / 2, 1.5)
-test('*', 3 * 2, 6)
-test('%', 4 % 2, 0)
+	testing.test('! (t)', !true, false),
+	testing.test('! (f)', !false, true),
 
-test('! (t)', !true, false)
-test('! (f)', !false, true)
-
-test('*/', 5 * 10 / 25, 2)
-test('-*', 20 - 10 * 2, 0)
-test('*-', 2 * 10 - 15, 5)
+	testing.test('*/', 5 * 10 / 25, 2),
+	testing.test('-*', 20 - 10 * 2, 0),
+	testing.test('*-', 2 * 10 - 15, 5)
+])

@@ -18,11 +18,6 @@ fn create(mut scope Scope) Value {
 }
 
 @[inline]
-fn exists(mut scope Scope) Value {
-	return os.exists(scope.get_fn_arg[string]('path', 'open'))
-}
-
-@[inline]
 fn close(mut scope Scope) Value {
 	mut file := unsafe { &os.File(scope.get_fn_arg[voidptr]('file', 'close')) }
 	file.close()
@@ -102,10 +97,6 @@ pub const files_module = {
 	'create':          ValueNativeFunction{
 		args: ['path']
 		code: create
-	}
-	'exists':          ValueNativeFunction{
-		args: ['path']
-		code: exists
 	}
 	'close':           ValueNativeFunction{
 		args: ['file']

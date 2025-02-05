@@ -37,7 +37,7 @@ pub:
 // run runs the function using `args` in subscope of the provided scope, then returns the function's returned value.
 // `tracer` is used to add the function's name to the stacktrace.
 pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value, tracer string) Value {
-	s.interpreter.push_trace(s.file, tracer, func.code.line, func.code.column)
+	s.interpreter.push_trace(s.file, tracer, -1, -1) //TODO: add line/column
 	mut scope := s.make_child()
 	// add args to scope
 	for arg, val in args {

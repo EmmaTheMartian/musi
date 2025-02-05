@@ -1,11 +1,13 @@
-let testing = import(":testing")
-
-if false do
-	println('1: fail (if false)')
-end elseif false do
-	println('1: fail (elseif false)')
-end elseif true do
-	println('1: pass (elseif true)')
-end else do
-	println('1: fail (else)')
-end
+return testing.context('conditionals/if_elseif_else', [
+	fn do
+		if false do
+			return testing.test('1 (if false)', false, true)
+		end elseif false do
+			return testing.test('1 (elseif false)', false, true)
+		end elseif true do
+			return testing.test('1 (elseif true)', true, true)
+		end else do
+			return testing.test('1 (else)', false, true)
+		end
+	end
+])

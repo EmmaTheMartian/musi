@@ -1,2 +1,2 @@
-println("This message is brought to you by tests/import/b.musi. If this message appears more than once, the test has failed.")
-return "Hello, World! (this should appear twice)"
+println('This message is brought to you by tests/import/b.musi. If this message appears more than once, the test has failed.')
+return 'Hello, World!'

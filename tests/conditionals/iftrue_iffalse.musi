@@ -1,11 +1,16 @@
-if true do
-	println('1: pass')
-end else do
-	println('1: fail')
-end
-
-if false do
-	println('2: fail')
-end else do
-	println('2: pass')
-end
+return testing.context('conditionals/iftrue_iffalse', [
+	fn do
+		if true do
+			return testing.test('true', true, true)
+		end else do
+			return testing.test('true', false, true)
+		end
+	end,
+	fn do
+		if false do
+			return testing.test('false', false, true)
+		end else do
+			return testing.test('false', true, true)
+		end
+	end
+])

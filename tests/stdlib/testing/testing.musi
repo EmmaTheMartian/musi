@@ -1,4 +1,4 @@
-testing.context('stdlib/testing/testing.musi', [
+return testing.context('stdlib/testing/testing', [
 	testing.test('true', true, true),
 	testing.test('false', false, false)
 ])

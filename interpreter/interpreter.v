@@ -48,6 +48,12 @@ pub fn (mut i Interpreter) new_scope() Scope {
 	return i.root_scope.make_child()
 }
 
+// new_isolated_scope creates a new isolated child scope, then returns it.
+@[inline]
+pub fn (mut i Interpreter) new_isolated_scope(file_tracer string) Scope {
+	return Scope.new(i, file_tracer)
+}
+
 // push_trace pushes a `Trace` to the stacktrace.
 // make sure to pop_trace all pushed traces!
 @[inline]
@@ -73,7 +79,7 @@ pub fn (mut i Interpreter) run(tree &AST) Value {
 // `Interpreter.scope_init_fn` is called on the scope after making it and before evaluating, you can use it to add the stdlib.
 @[inline]
 pub fn (mut i Interpreter) run_isolated(file_tracer string, tree &AST) Value {
-	mut scope := Scope.new(i, file_tracer)
+	mut scope := i.new_isolated_scope(file_tracer)
 	i.scope_init_fn(mut scope)
 	return scope.eval(&NodeRoot(tree))
 }

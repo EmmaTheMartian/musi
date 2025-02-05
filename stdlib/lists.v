@@ -154,6 +154,16 @@ fn reversed(mut scope Scope) Value {
 	return scope.get_fn_arg[[]Value]('list', 'reversed').reverse()
 }
 
+@[inline]
+fn index(mut scope Scope) Value {
+	return f64(scope.get_fn_arg[[]Value]('list', 'index').index(scope.get_fn_arg_raw('it', 'index')))
+}
+
+@[inline]
+fn contains(mut scope Scope) Value {
+	return scope.get_fn_arg[[]Value]('list', 'index').contains(scope.get_fn_arg_raw('it', 'index'))
+}
+
 pub const lists_module = {
 	'append':    Value(ValueNativeFunction{
 		args: ['list', 'value']
@@ -214,6 +224,14 @@ pub const lists_module = {
 	'revsersed': ValueNativeFunction{
 		args: ['list']
 		code: reversed
+	}
+	'index':     ValueNativeFunction{
+		args: ['list', 'it']
+		code: index
+	}
+	'contains':  ValueNativeFunction{
+		args: ['list', 'it']
+		code: contains
 	}
 }
 

@@ -21,11 +21,11 @@ pub fn (s &Scope) throw(message string) {
 	eprintln('\033[31mmusi error\033[0m: ${message}')
 	eprintln('\033[31mstacktrace\033[0m:')
 	if s.interpreter.options.coloured_errors {
-		for trace in s.interpreter.stacktrace.array() {
+		for trace in s.interpreter.stacktrace.array().reverse() {
 			eprintln('  \033[32m${trace.file}\033[0m:\033[34m${trace.line}\033[0m:\033[34m${trace.column}\033[0m at \033[35m${trace.source}\033[0m')
 		}
 	} else {
-		for trace in s.interpreter.stacktrace.array() {
+		for trace in s.interpreter.stacktrace.array().reverse() {
 			eprintln('  ${trace.file}:${trace.source}:${trace.line}:${trace.column}')
 		}
 	}
@@ -128,7 +128,12 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			match node.kind {
 				// .bitwise_not { return Value(f64(int(s.eval(node.left) as f64) ~ int(s.eval(node.right) as f64))) }
 				.unary_not {
-					return Value(!(s.eval(node.value) as bool))
+					result := s.eval(node.value)
+					if result is bool {
+						return Value(!(result as bool))
+					} else {
+						s.throw('cannot use unary not operator (!) on non-bool value (${result})')
+					}
 				}
 				else {
 					s.throw('eval() given a NodeUnaryOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
