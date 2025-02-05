@@ -1,0 +1,28 @@
+name: test musi
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "test"
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup V
+        uses: vlang/setup-v@v1.4
+        with:
+          stable: true
+      - name: Download Clockwork
+        run: v download -RD https://raw.githubusercontent.com/EmmaTheMartian/clockwork/refs/heads/main/scripts/install.vsh
+      - name: Test
+        run: clockwork test.musi
