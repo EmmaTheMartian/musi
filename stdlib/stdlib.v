@@ -7,7 +7,8 @@ import interpreter { Scope }
 pub fn apply_stdlib(mut scope Scope) {
 	apply_builtins(mut scope)
 	// apply_eval(mut scope)
-	eval_module_.apply(mut scope)
+	interpreter.MusiModule.apply[EvalModule](eval_module_, mut scope)
+	// eval_module_.apply(mut scope)
 	apply_files(mut scope)
 	apply_lists(mut scope)
 	apply_os(mut scope)

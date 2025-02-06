@@ -57,14 +57,15 @@ pub fn (scope &Scope) get_fn_arg_raw_ptr(name string, fnname string) &Value {
 	}
 }
 
-pub struct Module {
+pub struct MusiModule {
 pub:
 	name string
 }
 
-pub fn (mod &Module) apply(mut scope Scope) {
+pub fn MusiModule.apply[T](instance &T, mut scope Scope) {
 	mut functions := map[string]Value{}
-	$for method in mod.methods {
+	$for method in T.methods {
+		println('libutil: ${method.name}')
 		mut args := []string{}
 		$for attr in method.attributes {
 			if attr.name == 'params' {
@@ -73,15 +74,12 @@ pub fn (mod &Module) apply(mut scope Scope) {
 				}
 			}
 		}
-		if method.return_type is Value {
-		} else {
-			panic('error: module functions must return Value')
-		}
-		name := method.name
-		functions[name] = ValueNativeFunction{
+		method_name := method.name
+		functions[method.name] = ValueNativeFunction{
 			args: args
-			code: mod.$name
+			code: instance.$method_name
 		}
 	}
-	scope.new(mod.name, functions)
+	println('libutil: ${functions}')
+	scope.new(instance.name, functions)
 }

@@ -1,0 +1,1 @@
+println(eval.runstring('return 42') == 42)

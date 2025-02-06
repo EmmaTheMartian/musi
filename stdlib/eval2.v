@@ -1,19 +1,18 @@
 module stdlib
 
-import interpreter { Scope, Value, ValueNativeFunction, Module }
+import interpreter { Scope, Value, ValueNativeFunction, MusiModule }
 
 pub const eval_module_ = EvalModule{}
 
-@[noinit]
 struct EvalModule {
-	Module
+	MusiModule
 pub:
 	name string = 'eval'
 }
 
 @[inline]
 @[params: 'path']
-fn (m &EvalModule) runfile(mut scope Scope) Value {
+pub fn (m &EvalModule) runfile(mut scope Scope) Value {
 	path := scope.get_fn_arg[string]('path', 'runfile')
 	scope.interpreter.push_trace(path, 'runfile', -1, -1)
 	result := scope.interpreter.run_file_isolated(path)
