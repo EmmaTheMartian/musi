@@ -65,7 +65,6 @@ pub:
 pub fn MusiModule.apply[T](instance &T, mut scope Scope) {
 	mut functions := map[string]Value{}
 	$for method in T.methods {
-		println('libutil: ${method.name}')
 		mut args := []string{}
 		$for attr in method.attributes {
 			if attr.name == 'params' {
@@ -74,12 +73,14 @@ pub fn MusiModule.apply[T](instance &T, mut scope Scope) {
 				}
 			}
 		}
-		method_name := method.name
+		closure := fn [instance, method] (mut scope Scope) Value {
+			func := instance.$(method.name)
+			return func(mut scope)
+		}
 		functions[method.name] = ValueNativeFunction{
 			args: args
-			code: instance.$method_name
+			code: closure
 		}
 	}
-	println('libutil: ${functions}')
 	scope.new(instance.name, functions)
 }
