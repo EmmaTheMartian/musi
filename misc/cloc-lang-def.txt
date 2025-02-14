@@ -1,0 +1,5 @@
+musi
+    filter remove_matches ^\s*#
+    filter remove_inline #.*$
+    extension musi
+    3rd_gen_scale 4.00

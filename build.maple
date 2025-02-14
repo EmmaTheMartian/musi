@@ -94,5 +94,5 @@ task:fmt = {
 task:cloc = {
 	help = 'Count lines of code'
 	category = 'misc'
-	run = 'cloc ${sources}'
+	run = 'cloc --read-lang-def=misc/cloc-lang-def.txt ${sources} tests/ samples/ doc/'
 }
