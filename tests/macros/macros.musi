@@ -1,0 +1,71 @@
+return testing.context('macros/macros', [
+	fn do
+		# This macro does nothing
+		let noop = macro tokens do
+			return tokens
+		end
+
+		@noop(return testing.test('noop', true, true))
+		return testing.test('noop', false, true)
+	end,
+	fn do
+		# This is a neat macro that returns the provided code as their tokens
+		let quote = macro tokens do
+			let processed = [{kind='literal', value='['}]
+			tokens -> lists.each(fn it do
+				lists.append(processed, {kind='literal', value='{'})
+				lists.append(processed, {kind='id', value='kind'})
+				lists.append(processed, {kind='operator', value='='})
+				lists.append(processed, {kind='str', value=it.kind})
+				lists.append(processed, {kind='id', value='value'})
+				lists.append(processed, {kind='operator', value='='})
+				lists.append(processed, {kind='str', value=it.value})
+				lists.append(processed, {kind='literal', value='}'})
+				lists.append(processed, {kind='literal', value=','})
+			end)
+			processed -> lists.append({kind='literal', value=']'})
+			return processed
+		end
+
+		return testing.test('quote macro', @quote(fn do return 0.0 end), [
+			{kind='keyword', value='fn'},
+			{kind='keyword', value='do'},
+			{kind='keyword', value='return'},
+			{kind='number', value='0.0'},
+			{kind='keyword', value='end'},
+		])
+	end,
+	fn do
+		# This macro creates a lambda function!
+		let lambda = macro tokens do
+			let processed = [{kind='keyword', value='fn'}]
+
+			let pipe_index = null
+			tokens -> lists.tryieach(fn index, token do
+				if token.kind == 'operator' && token.value == '->' do
+					pipe_index = index
+					return false
+				end
+				lists.append(processed, token)
+				return true
+			end)
+
+			lists.append(processed, {kind='keyword', value='do'})
+			lists.append(processed, {kind='keyword', value='return'})
+
+			# Add remaining tokens to `processed` literally.
+			tokens -> lists.ieach(fn index, token do
+				if index > pipe_index do
+					lists.append(processed, token)
+				end
+			end)
+
+			lists.append(processed, {kind='keyword', value='end'})
+
+			return processed
+		end
+
+		let newuser = @lambda(name, age -> { name=name, age=age })
+		return testing.test('lambda', newuser('Gandalf', 50000), {name='Gandalf', age=50000})
+	end
+])
