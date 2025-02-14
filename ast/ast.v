@@ -11,8 +11,6 @@ pub:
 	column int @[required]
 }
 
-pub type AST = NodeRoot
-
 pub struct IfChainElement {
 pub:
 	line   int @[required]
@@ -74,7 +72,7 @@ pub enum Operator {
 pub struct NodeRoot implements INode {
 	BaseNode
 pub:
-	filepath string @[required]
+	filepath string
 pub mut:
 	children []INode
 }
@@ -82,8 +80,9 @@ pub mut:
 pub struct NodeInvoke implements INode {
 	BaseNode
 pub:
-	func INode
-	args []INode
+	func  INode
+	args  []INode
+	macro bool
 }
 
 pub struct NodeString implements INode {
@@ -124,6 +123,12 @@ pub struct NodeFn implements INode {
 	BaseNode
 pub:
 	args []string
+	code NodeBlock
+}
+
+pub struct NodeMacro implements INode {
+	BaseNode
+pub:
 	code NodeBlock
 }
 

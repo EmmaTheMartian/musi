@@ -2,7 +2,7 @@ module interpreter
 
 import os
 import datatypes { Stack }
-import ast { AST, NodeRoot }
+import ast { NodeRoot }
 import tokenizer
 import parser
 
@@ -69,7 +69,7 @@ pub fn (mut i Interpreter) pop_trace() {
 
 // run evaluates the provided AST in the interpreter's root scope and returns the scope's returned value.
 @[inline]
-pub fn (mut i Interpreter) run(tree &AST) Value {
+pub fn (mut i Interpreter) run(tree &NodeRoot) Value {
 	return i.root_scope.eval(&NodeRoot(tree))
 }
 
@@ -78,7 +78,7 @@ pub fn (mut i Interpreter) run(tree &AST) Value {
 // `file_tracer` should be the name of the file being executed, or `<string>` if a raw string is being executed.
 // `Interpreter.scope_init_fn` is called on the scope after making it and before evaluating, you can use it to add the stdlib.
 @[inline]
-pub fn (mut i Interpreter) run_isolated(file_tracer string, tree &AST) Value {
+pub fn (mut i Interpreter) run_isolated(file_tracer string, tree &NodeRoot) Value {
 	mut scope := i.new_isolated_scope(file_tracer)
 	i.scope_init_fn(mut scope)
 	return scope.eval(&NodeRoot(tree))

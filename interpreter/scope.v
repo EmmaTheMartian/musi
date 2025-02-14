@@ -1,6 +1,8 @@
 module interpreter
 
 import ast { INode }
+import tokenizer
+import parser
 
 // Scope represents a scope, containing information needed for executing code under an Interpreter.
 @[heap; noinit]
@@ -36,16 +38,6 @@ pub fn (s &Scope) throw(message string) {
 	exit(1)
 }
 
-// get_trace follows all scope parents and gets their tracers, returning each as a list.
-// pub fn (s &Scope) get_trace() []string {
-// 	mut trace := []string{}
-// 	trace << s.tracer
-// 	if s.parent != unsafe { nil } {
-// 		trace << s.parent.get_trace()
-// 	}
-// 	return trace
-// }
-
 // eval evaluates the given node under the scope and returns the evaluated value.
 pub fn (mut s Scope) eval(node &INode) Value {
 	match node {
@@ -65,7 +57,12 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return null_value
 		}
 		ast.NodeId {
-			return s.get(node.value) or { s.throw('unknown variable identifier: ${node.value}') }
+			it := if node.value[0] == `@` {
+				node.value[1..]
+			} else {
+				node.value
+			}
+			return s.get(it) or { s.throw('unknown variable identifier: ${it}') }
 		}
 		ast.NodeBlock {
 			for child in node.nodes {
@@ -80,6 +77,13 @@ pub fn (mut s Scope) eval(node &INode) Value {
 			return ValueFunction{
 				code: node.code
 				args: node.args
+			}
+		}
+		ast.NodeMacro {
+			return ValueFunction{
+				code:  node.code
+				args:  ['tokens']
+				macro: true
 			}
 		}
 		ast.NodeLet {
@@ -157,6 +161,19 @@ pub fn (mut s Scope) eval(node &INode) Value {
 		}
 	}
 	s.throw('eval() returned no value. this should never happen, please report it.')
+}
+
+// process_tokens tokenizes, processes, and evaluates the given tokens in the current scope.
+// this is used primarily for macros.
+// the returned value is the evaluated value of the last node provided.
+@[inline]
+pub fn (mut s Scope) process_tokens(tokens []tokenizer.Token) Value {
+	parsed := parser.parse_list(tokens)
+	mut values := []Value{}
+	for node in parsed {
+		values << s.eval(node)
+	}
+	return values.last()
 }
 
 // eval_function evaluates the provided function value with the provided args, then returns the function's returned value.
@@ -280,29 +297,43 @@ fn (mut s Scope) invoke_node(node &ast.NodeInvoke) Value {
 	})
 }
 
-// eval_operator evaluates and returns the given `ast.NodeOperator`.
+pub fn (mut s Scope) eval_operator_value(kind ast.Operator, left Value, right Value) Value {
+	match kind {
+		// vfmt off
+		.eq { return Value(left == right) }
+		.neq { return Value(left != right) }
+		.gteq { return Value((left as f64) >= (right as f64)) }
+		.lteq { return Value((left as f64) <= (right as f64)) }
+		.gt { return Value((left as f64) > (right as f64)) }
+		.lt { return Value((left as f64) < (right as f64)) }
+		.and { return Value((left as bool) && (right as bool)) }
+		.or { return Value((left as bool) || (right as bool)) }
+		.shift_right { return Value(f64(int(left as f64) >> int(right as f64))) }
+		.shift_left { return Value(f64(int(left as f64) << int(right as f64))) }
+		.bit_and { return Value(f64(int(left as f64) & int(right as f64))) }
+		.bit_xor { return Value(f64(int(left as f64) ^ int(right as f64))) }
+		.bit_or { return Value(f64(int(left as f64) | int(right as f64))) }
+		.add { return Value((left as f64) + (right as f64)) }
+		.sub { return Value((left as f64) - (right as f64)) }
+		.div { return Value((left as f64) / (right as f64)) }
+		.mul { return Value((left as f64) * (right as f64)) }
+		.mod { return Value(f64(int(left as f64) % int(right as f64))) }
+		// vfmt on
+		else {
+			s.throw('eval_operator_value() given an invalid kind (${kind}). This error should never happen, please report it.')
+		}
+	}
+	s.throw('eval_operator_value() given an invalid kind (${kind}). This error should never happen, please report it.')
+}
+
+// eval_operator evaluates and returns the resulting`Value`.
 @[inline]
 fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
+	if node.kind != .pipe && node.kind != .dot && node.kind != .assign {
+		return s.eval_operator_value(node.kind, s.eval(node.left), s.eval(node.right))
+	}
 	match node.kind {
 		// vfmt off
-		.eq { return Value(s.eval(node.left) == s.eval(node.right)) }
-		.neq { return Value(s.eval(node.left) != s.eval(node.right)) }
-		.gteq { return Value((s.eval(node.left) as f64) >= (s.eval(node.right) as f64)) }
-		.lteq { return Value((s.eval(node.left) as f64) <= (s.eval(node.right) as f64)) }
-		.gt { return Value((s.eval(node.left) as f64) > (s.eval(node.right) as f64)) }
-		.lt { return Value((s.eval(node.left) as f64) < (s.eval(node.right) as f64)) }
-		.and { return Value((s.eval(node.left) as bool) && (s.eval(node.right) as bool)) }
-		.or { return Value((s.eval(node.left) as bool) || (s.eval(node.right) as bool)) }
-		.shift_right { return Value(f64(int(s.eval(node.left) as f64) >> int(s.eval(node.right) as f64))) }
-		.shift_left { return Value(f64(int(s.eval(node.left) as f64) << int(s.eval(node.right) as f64))) }
-		.bit_and { return Value(f64(int(s.eval(node.left) as f64) & int(s.eval(node.right) as f64))) }
-		.bit_xor { return Value(f64(int(s.eval(node.left) as f64) ^ int(s.eval(node.right) as f64))) }
-		.bit_or { return Value(f64(int(s.eval(node.left) as f64) | int(s.eval(node.right) as f64))) }
-		.add { return Value((s.eval(node.left) as f64) + (s.eval(node.right) as f64)) }
-		.sub { return Value((s.eval(node.left) as f64) - (s.eval(node.right) as f64)) }
-		.div { return Value((s.eval(node.left) as f64) / (s.eval(node.right) as f64)) }
-		.mul { return Value((s.eval(node.left) as f64) * (s.eval(node.right) as f64)) }
-		.mod { return Value(f64(int(s.eval(node.left) as f64) % int(s.eval(node.right) as f64))) }
 		.pipe { return s.pipe(s.eval(node.left), node.right) }
 		.dot { return s.eval_dots(node) }
 		.assign {
@@ -321,10 +352,10 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 		}
 		// vfmt on
 		else {
-			s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
+			s.throw('eval_operator() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 		}
 	}
-	s.throw('eval() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
+	s.throw('eval_operator() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 }
 
 @[params]
@@ -372,6 +403,14 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator, params EvalDotsParams) Value 
 			}
 		}
 		s.throw('cannot use dot operator (.) on object `${left}`')
+	} else if node.right is ast.NodeOperator {
+		dotted := s.eval_dots(ast.NodeOperator{
+			line: node.left.line
+			column: node.left.column
+			left: node.left
+			right: node.right.left
+		})
+		return s.eval_operator_value(node.right.kind, dotted, s.eval(node.right.right))
 	} else {
 		s.throw('eval_dots: expected identifier or string but got `${node.right}`')
 	}

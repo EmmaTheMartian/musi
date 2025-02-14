@@ -207,6 +207,31 @@ fn (mut p Parser) tokens_until(kind TokenKind, value string) []Token {
 	return tokens
 }
 
+// resolve_dots gets a list of each identifier/string in a series of dot operators.
+@[inline]
+fn (mut p Parser) resolve_dots(node &ast.NodeOperator) []string {
+	mut dots := []string{}
+	dots << if node.left is ast.NodeId {
+		[node.left.value]
+	} else if node.left is ast.NodeString {
+		[node.left.value]
+	} else if node.left is ast.NodeOperator && node.left.kind == .dot {
+		p.resolve_dots(node.left)
+	} else {
+		p.throw('cannot resolve dots for ${node}')
+	}
+	dots << if node.right is ast.NodeId {
+		[node.right.value]
+	} else if node.right is ast.NodeString {
+		[node.right.value]
+	} else if node.right is ast.NodeOperator && node.right.kind == .dot {
+		p.resolve_dots(node.right)
+	} else {
+		p.throw('cannot resolve dots for ${node}')
+	}
+	return dots
+}
+
 // parse_invoke parses tokens expecting to build an `ast.NodeInvoke`.
 // the provided `node` is the function, this will often be an identifier or dot operator.
 // the current node must be a `(` literal.
@@ -214,11 +239,47 @@ fn (mut p Parser) tokens_until(kind TokenKind, value string) []Token {
 fn (mut p Parser) parse_invoke(node ast.INode) ast.NodeInvoke {
 	tok := p.peek()
 	args := p.tokens_until_closing(.literal, '(', .literal, ')', true)
+
+	// Check if we are invoking a macro
+	is_macro := if node is ast.NodeId &&  node.value[0] == `@` {
+		true
+	} else if node is ast.NodeOperator && node.kind == .dot &&  p.resolve_dots(node).last()[0] == `@` {
+		true
+	} else {
+		false
+	}
+
+	parsed_args := if is_macro {
+		[ast.INode(ast.NodeList{
+			line: -1
+			column: -1
+			values: args.map(|token| ast.INode(ast.NodeTable{
+				line: token.line
+				column: token.column
+				values: {
+					'kind': ast.INode(ast.NodeString{
+						line: token.line
+						column: token.column
+						value: token.kind.str()
+					})
+					'value': ast.INode(ast.NodeString{
+						line: token.line
+						column: token.column
+						value: token.value
+					})
+				}
+			}))
+		})]
+	} else {
+		parse_comma_list(args, false)
+	}
+
 	return ast.NodeInvoke{
 		line:   tok.line
 		column: tok.column
 		func:   node
-		args:   parse_comma_list(args, false)
+		args:   parsed_args
+		macro:  is_macro
 	}
 }
 
@@ -242,6 +303,7 @@ fn (mut p Parser) parse_block() ast.NodeBlock {
 fn (mut p Parser) parse_fn() ast.NodeFn {
 	p.expect_n(.keyword, 'fn', -1)
 	tok := p.peek_n(-1)
+
 	args := p.tokens_until(.keyword, 'do')
 	// check if the last element is not an identifier. this would be the case if a trailing comma exists
 	if args.len > 0 && args[args.len - 1].kind != .id {
@@ -263,12 +325,40 @@ fn (mut p Parser) parse_fn() ast.NodeFn {
 			}
 		}
 	}
-	// skip commas in the arguments
+
 	block := p.parse_block()
+
 	return ast.NodeFn{
 		line:   tok.line
 		column: tok.column
 		args:   parsed_args
+		code:   block
+	}
+}
+
+// parse_macro parses tokens expecting to build an `ast.NodeMacro`.
+// the current node must be the token *after* a `macro` keyword.
+@[inline]
+fn (mut p Parser) parse_macro() ast.NodeMacro {
+	p.expect_n(.keyword, 'macro', -1)
+	tok := p.peek_n(-1)
+
+	args := p.tokens_until(.keyword, 'do')
+	// check if the last element is not an identifier. this would be the case if a trailing comma exists
+	if args.len > 0 && args[args.len - 1].kind != .id {
+		p.throw('expected identifier but got `${args[args.len - 1].value}`')
+	}
+	// validate argument
+	else if args[0].value != 'tokens' {
+		p.throw('macro argument must be called `tokens`')
+	} else if args.len > 1 {
+		p.throw('macros must only have on argument (which must be called `tokens`)')
+	}
+
+	block := p.parse_block()
+	return ast.NodeMacro{
+		line:   tok.line
+		column: tok.column
 		code:   block
 	}
 }
@@ -449,6 +539,8 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 				node = p.parse_let()
 			} else if token.value == 'fn' {
 				node = p.parse_fn()
+			} else if token.value == 'macro' {
+				node = p.parse_macro()
 			} else if token.value == 'do' {
 				node = p.parse_block()
 			} else if token.value == 'return' {
@@ -630,10 +722,10 @@ pub fn parse_comma_list(tokens []Token, allow_trailing_comma bool) []ast.INode {
 	return nodes
 }
 
-// parse parses the provided list of tokens and returns them as an `ast.AST` to be interpreted.
+// parse parses the provided list of tokens and returns them as an `ast.NodeRoot` to be interpreted.
 @[inline]
-pub fn parse(tokens []Token) ast.AST {
-	return ast.AST{
+pub fn parse(tokens []Token) ast.NodeRoot {
+	return ast.NodeRoot{
 		line:     if tokens.len > 0 { tokens[0].line } else { -1 }
 		column:   if tokens.len > 0 { tokens[0].column } else { -1 }
 		children: parse_list(tokens)

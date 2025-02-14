@@ -80,6 +80,32 @@ fn lists_each(mut scope Scope) Value {
 }
 
 @[inline]
+fn lists_tryeach(mut scope Scope) Value {
+	list := scope.get_fn_arg[[]Value]('list', 'tryeach')
+	action := scope.get_fn_arg_raw('action', 'tryeach')
+
+	func := if action is ValueFunction {
+		IFunctionValue(action)
+	} else if action is ValueNativeFunction {
+		IFunctionValue(action)
+	} else {
+		scope.throw('each: action must be a function')
+	}
+
+	mut result := interpreter.null_value
+	for value in list {
+		result = func.run(mut scope, {
+			func.args[0]: value
+		}, 'action')
+		if result is bool && result == false {
+			break
+		}
+	}
+
+	return interpreter.null_value
+}
+
+@[inline]
 fn lists_ieach(mut scope Scope) Value {
 	list := scope.get_fn_arg[[]Value]('list', 'ieach')
 	action := scope.get_fn_arg_raw('action', 'ieach')
@@ -97,6 +123,33 @@ fn lists_ieach(mut scope Scope) Value {
 			func.args[0]: f64(index)
 			func.args[1]: value
 		}, 'action')
+	}
+
+	return interpreter.null_value
+}
+
+@[inline]
+fn lists_tryieach(mut scope Scope) Value {
+	list := scope.get_fn_arg[[]Value]('list', 'tryieach')
+	action := scope.get_fn_arg_raw('action', 'tryieach')
+
+	func := if action is ValueFunction {
+		IFunctionValue(action)
+	} else if action is ValueNativeFunction {
+		IFunctionValue(action)
+	} else {
+		scope.throw('tryieach: action must be a function')
+	}
+
+	mut result := interpreter.null_value
+	for index, value in list {
+		result = func.run(mut scope, {
+			func.args[0]: f64(index)
+			func.args[1]: value
+		}, 'action')
+		if result is bool && result == false {
+			break
+		}
 	}
 
 	return interpreter.null_value
@@ -199,9 +252,17 @@ pub const lists_module = {
 		args: ['list', 'action']
 		code: lists_each
 	}
+	'tryeach':   ValueNativeFunction{
+		args: ['list', 'action']
+		code: lists_tryeach
+	}
 	'ieach':     ValueNativeFunction{
 		args: ['list', 'action']
 		code: lists_ieach
+	}
+	'tryieach':  ValueNativeFunction{
+		args: ['list', 'action']
+		code: lists_tryieach
 	}
 	'range':     ValueNativeFunction{
 		args: ['from', 'to']
