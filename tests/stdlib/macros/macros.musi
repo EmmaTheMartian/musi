@@ -1,0 +1,15 @@
+return testing.context('stdlib/macros/macros', [
+	fn do
+		return testing.test('quote macro', macros.@quote(fn do return 0.0 end), [
+			{kind='keyword', value='fn'},
+			{kind='keyword', value='do'},
+			{kind='keyword', value='return'},
+			{kind='number', value='0.0'},
+			{kind='keyword', value='end'},
+		])
+	end,
+	fn do
+		let newuser = macros.@lambda(name, age -> { name=name, age=age })
+		return testing.test('lambda', newuser('Gandalf', 50000), {name='Gandalf', age=50000})
+	end
+])

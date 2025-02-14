@@ -334,7 +334,6 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 		return s.eval_operator_value(node.kind, s.eval(node.left), s.eval(node.right))
 	}
 	match node.kind {
-		// vfmt off
 		.pipe { return s.pipe(s.eval(node.left), node.right) }
 		.dot { return s.eval_dots(node) }
 		.assign {
@@ -351,7 +350,6 @@ fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 			}
 			return value
 		}
-		// vfmt on
 		else {
 			s.throw('eval_operator() given a NodeOperator with an invalid kind (${node.kind}). This error should never happen, please report it.')
 		}
@@ -379,13 +377,19 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator, params EvalDotsParams) Value 
 			mut name := 'lambda'
 			variable := if node.right.func is ast.NodeId {
 				name = node.right.func.value
+				if name[0] == `@` {
+					name = name[1..]
+				}
 				left[name] or {
-					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
+					s.throw('unknown variable (eval_dots on NodeInvoke): ${name}')
 				}
 			} else if node.right.func is ast.NodeString {
 				name = node.right.func.value
+				if name[0] == `@` {
+					name = name[1..]
+				}
 				left[name] or {
-					s.throw('unknown variable (eval_dots on NodeInvoke): ${node.right.func.value}')
+					s.throw('unknown variable (eval_dots on NodeInvoke): ${name}')
 				}
 			} else {
 				s.throw('cannot get function `${node.right.func}` on right side of dot operator (.)')
@@ -396,7 +400,6 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator, params EvalDotsParams) Value 
 				for arg in node.right.args {
 					args << s.eval(arg)
 				}
-				// println('pipe_in args: ${args}')
 				return s.eval_function_list_args(variable, args, name)
 			} else {
 				args := s.eval_function_args(variable, node.right)

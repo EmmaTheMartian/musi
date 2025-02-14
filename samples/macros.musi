@@ -9,6 +9,7 @@ end
 @noop(println('Hello, World!'))
 
 # This is a neat macro that returns the provided code as their tokens
+# This macro exists in the `macros` module
 let quote = macro tokens do
 	let processed = [{kind='literal', value='['}]
 	tokens -> lists.each(fn it do
@@ -29,27 +30,19 @@ end
 println(@quote(fn do return null end))
 
 # This macro creates a lambda function!
+# This macro exists in the `macros` module
 let lambda = macro tokens do
 	let processed = [{kind='keyword', value='fn'}]
 
-	let pipe_index = null
-	tokens -> lists.tryieach(fn index, token do
+	let found_pipe = false
+	tokens -> lists.ieach(fn index, token do
 		if token.kind == 'operator' && token.value == '->' do
-			pipe_index = index
-			return false
+			found_pipe = true
+			lists.append(processed, {kind='keyword', value='do'})
+			lists.append(processed, {kind='keyword', value='return'})
+			return null
 		end
 		lists.append(processed, token)
-		return true
-	end)
-
-	lists.append(processed, {kind='keyword', value='do'})
-	lists.append(processed, {kind='keyword', value='return'})
-
-	# Add remaining tokens to `processed` literally.
-	tokens -> lists.ieach(fn index, token do
-		if index > pipe_index do
-			lists.append(processed, token)
-		end
 	end)
 
 	lists.append(processed, {kind='keyword', value='end'})
