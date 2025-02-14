@@ -19,11 +19,11 @@ fn os_walk(mut scope Scope) Value {
 }
 
 pub const os_module = {
-	'ls':     Value(ValueNativeFunction{
+	'ls':   Value(ValueNativeFunction{
 		args: ['path']
 		code: os_ls
 	})
-	'walk':   Value(ValueNativeFunction{
+	'walk': Value(ValueNativeFunction{
 		args: ['path']
 		code: os_walk
 	})

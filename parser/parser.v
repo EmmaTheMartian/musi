@@ -241,35 +241,36 @@ fn (mut p Parser) parse_invoke(node ast.INode) ast.NodeInvoke {
 	args := p.tokens_until_closing(.literal, '(', .literal, ')', true)
 
 	// Check if we are invoking a macro
-	is_macro := if node is ast.NodeId &&  node.value[0] == `@` {
+	is_macro := if node is ast.NodeId && node.value[0] == `@` {
 		true
-	} else if node is ast.NodeOperator && node.kind == .dot &&  p.resolve_dots(node).last()[0] == `@` {
+	} else if node is ast.NodeOperator && node.kind == .dot && p.resolve_dots(node).last()[0] == `@` {
 		true
 	} else {
 		false
 	}
 
 	parsed_args := if is_macro {
-		[ast.INode(ast.NodeList{
-			line: -1
+		n := ast.INode(ast.NodeList{
+			line:   -1
 			column: -1
 			values: args.map(|token| ast.INode(ast.NodeTable{
-				line: token.line
+				line:   token.line
 				column: token.column
 				values: {
-					'kind': ast.INode(ast.NodeString{
-						line: token.line
+					'kind':  ast.INode(ast.NodeString{
+						line:   token.line
 						column: token.column
-						value: token.kind.str()
+						value:  token.kind.str()
 					})
 					'value': ast.INode(ast.NodeString{
-						line: token.line
+						line:   token.line
 						column: token.column
-						value: token.value
+						value:  token.value
 					})
 				}
 			}))
-		})]
+		})
+		[n]
 	} else {
 		parse_comma_list(args, false)
 	}

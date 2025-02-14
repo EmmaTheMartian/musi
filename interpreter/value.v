@@ -32,19 +32,15 @@ pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value, trace
 	if func.macro {
 		return s.process_tokens((returned as []Value).map(fn [s] (it Value) tokenizer.Token {
 			if it is map[string]Value {
-				kind := it['kind'] or {
-					s.throw('returned macro token must have a `kind` key')
-				}  as string
-				value := it['value'] or {
-					s.throw('returned macro token must have a `value` key')
-				}  as string
+				kind := it['kind'] or { s.throw('returned macro token must have a `kind` key') } as string
+				value := it['value'] or { s.throw('returned macro token must have a `value` key') } as string
 				return tokenizer.Token{
-					line: -1
+					line:   -1
 					column: -1
-					kind: tokenizer.TokenKind.from(kind) or {
+					kind:   tokenizer.TokenKind.from(kind) or {
 						s.throw('unknown token kind ${kind}')
 					}
-					value: value
+					value:  value
 				}
 			} else {
 				s.throw('macros must return a list of maps representing tokens.')
@@ -77,19 +73,15 @@ pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value, tracer stri
 	if func.macro {
 		return s.process_tokens((returned as []Value).map(fn [s] (it Value) tokenizer.Token {
 			if it is map[string]Value {
-				kind := it['kind'] or {
-					s.throw('returned macro token must have a `kind` key')
-				}  as string
-				value := it['value'] or {
-					s.throw('returned macro token must have a `value` key')
-				}  as string
+				kind := it['kind'] or { s.throw('returned macro token must have a `kind` key') } as string
+				value := it['value'] or { s.throw('returned macro token must have a `value` key') } as string
 				return tokenizer.Token{
-					line: -1
+					line:   -1
 					column: -1
-					kind: tokenizer.TokenKind.from(kind) or {
+					kind:   tokenizer.TokenKind.from(kind) or {
 						s.throw('unknown token kind ${kind}')
 					}
-					value: value
+					value:  value
 				}
 			} else {
 				s.throw('macros must return a list of maps representing tokens.')

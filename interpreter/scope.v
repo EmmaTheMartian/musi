@@ -297,6 +297,7 @@ fn (mut s Scope) invoke_node(node &ast.NodeInvoke) Value {
 	})
 }
 
+// eval_operator_value evaluates and returns the resulting `Value`.
 pub fn (mut s Scope) eval_operator_value(kind ast.Operator, left Value, right Value) Value {
 	match kind {
 		// vfmt off
@@ -326,7 +327,7 @@ pub fn (mut s Scope) eval_operator_value(kind ast.Operator, left Value, right Va
 	s.throw('eval_operator_value() given an invalid kind (${kind}). This error should never happen, please report it.')
 }
 
-// eval_operator evaluates and returns the resulting`Value`.
+// eval_operator evaluates and returns the resulting `Value` from the given node.
 @[inline]
 fn (mut s Scope) eval_operator(node &ast.NodeOperator) Value {
 	if node.kind != .pipe && node.kind != .dot && node.kind != .assign {
@@ -405,10 +406,10 @@ fn (mut s Scope) eval_dots(node &ast.NodeOperator, params EvalDotsParams) Value 
 		s.throw('cannot use dot operator (.) on object `${left}`')
 	} else if node.right is ast.NodeOperator {
 		dotted := s.eval_dots(ast.NodeOperator{
-			line: node.left.line
+			line:   node.left.line
 			column: node.left.column
-			left: node.left
-			right: node.right.left
+			left:   node.left
+			right:  node.right.left
 		})
 		return s.eval_operator_value(node.right.kind, dotted, s.eval(node.right.right))
 	} else {
