@@ -24,7 +24,7 @@ scope_init_fn := fn [use_stdlib] (mut scope interpreter.Scope) {
 	stdlib.apply_stdlib(mut scope)
 }
 
-mut i := interpreter.Interpreter.new(root_import_dir, opts, scope_init_fn)
+mut i := interpreter.Interpreter.new(input_file, root_import_dir, opts, scope_init_fn)
 i.run_file('hello.musi')
 ```
 
