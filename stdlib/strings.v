@@ -107,6 +107,20 @@ fn strings_format(mut scope Scope) Value {
 	return str
 }
 
+@[inline]
+fn strings_concat(mut scope Scope) Value {
+	a := scope.get_fn_arg[string]('a', 'concat').str()
+	b := scope.get_fn_arg[string]('b', 'concat').str()
+	return a + b
+}
+
+@[inline]
+fn strings_join(mut scope Scope) Value {
+	list := scope.get_fn_arg[[]Value]('list', 'concat')
+	delimiter := scope.get_fn_arg[string]('delimiter', 'concat').str()
+	return list.map(|it| it.to_string()).join(delimiter)
+}
+
 pub const strings_module = {
 	'repeatstring':    Value(ValueNativeFunction{
 		args: ['string', 'count']
@@ -151,6 +165,14 @@ pub const strings_module = {
 	'format':          ValueNativeFunction{
 		args: ['string', 'values']
 		code: strings_format
+	}
+	'concat':          ValueNativeFunction{
+		args: ['a', 'b']
+		code: strings_concat
+	}
+	'join':            ValueNativeFunction{
+		args: ['list', 'delimiter']
+		code: strings_join
 	}
 }
 
