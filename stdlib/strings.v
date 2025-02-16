@@ -121,63 +121,28 @@ fn strings_join(mut scope Scope) Value {
 	return list.map(|it| it.to_string()).join(delimiter)
 }
 
-pub const strings_module = {
-	'repeatstring':    Value(ValueNativeFunction{
-		args: ['string', 'count']
-		code: strings_repeatstring
-	})
-	'tochar':          ValueNativeFunction{
-		args: ['number']
-		code: strings_tochar
-	}
-	'charat':          ValueNativeFunction{
-		args: ['string', 'index']
-		code: strings_charat
-	}
-	'length':          ValueNativeFunction{
-		args: ['string']
-		code: strings_strlength
-	}
-	'chars':           ValueNativeFunction{
-		args: ['string']
-		code: strings_chars
-	}
-	'findall':         ValueNativeFunction{
-		args: ['string', 'substring']
-		code: strings_findall
-	}
-	'replace':         ValueNativeFunction{
-		args: ['string', 'substring', 'with']
-		code: strings_replace
-	}
-	'replaceonce':     ValueNativeFunction{
-		args: ['string', 'substring', 'with']
-		code: strings_replaceonce
-	}
-	'replaceeach':     ValueNativeFunction{
-		args: ['string', 'substring', 'values']
-		code: strings_replaceeach
-	}
-	'replaceeachonce': ValueNativeFunction{
-		args: ['string', 'substring', 'values']
-		code: strings_replaceeachonce
-	}
-	'format':          ValueNativeFunction{
-		args: ['string', 'values']
-		code: strings_format
-	}
-	'concat':          ValueNativeFunction{
-		args: ['a', 'b']
-		code: strings_concat
-	}
-	'join':            ValueNativeFunction{
-		args: ['list', 'delimiter']
-		code: strings_join
-	}
-}
+pub const strings_module = [
+	ValueNativeFunction.new('repeatstring', ['string', 'count'], strings_repeatstring),
+	ValueNativeFunction.new('tochar', ['number'], strings_tochar),
+	ValueNativeFunction.new('charat', ['string', 'index'], strings_charat),
+	ValueNativeFunction.new('length', ['string'], strings_strlength),
+	ValueNativeFunction.new('chars', ['string'], strings_chars),
+	ValueNativeFunction.new('findall', ['string', 'substring'], strings_findall),
+	ValueNativeFunction.new('replace', ['string', 'substring', 'with'], strings_replace),
+	ValueNativeFunction.new('replaceonce', ['string', 'substring', 'with'], strings_replaceonce),
+	ValueNativeFunction.new('replaceeach', ['string', 'substring', 'values'], strings_replaceeach),
+	ValueNativeFunction.new('replaceeachonce', ['string', 'substring', 'values'], strings_replaceeachonce),
+	ValueNativeFunction.new('format', ['string', 'values'], strings_format),
+	ValueNativeFunction.new('concat', ['a', 'b'], strings_concat),
+	ValueNativeFunction.new('join', ['list', 'delimiter'], strings_join),
+]
 
 // apply_strings applies the `strings` module to the given scope.
 @[inline]
 pub fn apply_strings(mut scope Scope) {
-	scope.new('strings', strings_module)
+	mut mod := map[string]Value{}
+	for func in strings_module {
+		mod[func.tracer.source] = func
+	}
+	scope.new('strings', mod)
 }

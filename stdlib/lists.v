@@ -21,6 +21,9 @@ fn lists_prepend(mut scope Scope) Value {
 @[inline]
 fn lists_pop(mut scope Scope) Value {
 	mut list := scope.get_fn_arg_ptr[[]Value]('list', 'pop')
+	if list.len == 0 {
+		scope.throw('lists.pop: cannot invoke pop on empty list')
+	}
 	return list.pop()
 }
 
@@ -73,7 +76,7 @@ fn lists_each(mut scope Scope) Value {
 	for value in list {
 		func.run(mut scope, {
 			func.args[0]: value
-		}, 'action')
+		})
 	}
 
 	return interpreter.null_value
@@ -96,7 +99,7 @@ fn lists_tryeach(mut scope Scope) Value {
 	for value in list {
 		result = func.run(mut scope, {
 			func.args[0]: value
-		}, 'action')
+		})
 		if result is bool && result == false {
 			break
 		}
@@ -122,7 +125,7 @@ fn lists_ieach(mut scope Scope) Value {
 		func.run(mut scope, {
 			func.args[0]: f64(index)
 			func.args[1]: value
-		}, 'action')
+		})
 	}
 
 	return interpreter.null_value
@@ -146,7 +149,7 @@ fn lists_tryieach(mut scope Scope) Value {
 		result = func.run(mut scope, {
 			func.args[0]: f64(index)
 			func.args[1]: value
-		}, 'action')
+		})
 		if result is bool && result == false {
 			break
 		}
@@ -179,7 +182,7 @@ fn lists_filter(mut scope Scope) Value {
 	predicate := scope.get_fn_arg_raw('predicate', 'filter')
 	mut filtered := []Value{}
 	for x in to_filter {
-		if scope.eval_function_list_args(predicate, [x], 'predicate') == Value(true) {
+		if scope.eval_function_list_args(predicate, [x]) == Value(true) {
 			filtered << x
 		}
 	}
@@ -192,7 +195,7 @@ fn lists_map(mut scope Scope) Value {
 	predicate := scope.get_fn_arg_raw('predicate', 'map')
 	mut mapped := []Value{}
 	for x in to_map {
-		mapped << scope.eval_function_list_args(predicate, [x], 'predicate')
+		mapped << scope.eval_function_list_args(predicate, [x])
 	}
 	return mapped
 }
@@ -219,87 +222,34 @@ fn lists_contains(mut scope Scope) Value {
 		'index'))
 }
 
-pub const lists_module = {
-	'append':    Value(ValueNativeFunction{
-		args: ['list', 'value']
-		code: lists_append
-	})
-	'prepend':   ValueNativeFunction{
-		args: ['list', 'value']
-		code: lists_prepend
-	}
-	'pop':       ValueNativeFunction{
-		args: ['list']
-		code: lists_pop
-	}
-	'delete':    ValueNativeFunction{
-		args: ['list', 'index']
-		code: lists_delete
-	}
-	'clear':     ValueNativeFunction{
-		args: ['list']
-		code: lists_clear
-	}
-	'set':       ValueNativeFunction{
-		args: ['list', 'index', 'value']
-		code: lists_set
-	}
-	'get':       ValueNativeFunction{
-		args: ['list', 'index']
-		code: lists_get
-	}
-	'each':      ValueNativeFunction{
-		args: ['list', 'action']
-		code: lists_each
-	}
-	'tryeach':   ValueNativeFunction{
-		args: ['list', 'action']
-		code: lists_tryeach
-	}
-	'ieach':     ValueNativeFunction{
-		args: ['list', 'action']
-		code: lists_ieach
-	}
-	'tryieach':  ValueNativeFunction{
-		args: ['list', 'action']
-		code: lists_tryieach
-	}
-	'range':     ValueNativeFunction{
-		args: ['from', 'to']
-		code: lists_range
-	}
-	'listof':    ValueNativeFunction{
-		args: ['size', 'of']
-		code: lists_listof
-	}
-	'filter':    ValueNativeFunction{
-		args: ['list', 'predicate']
-		code: lists_filter
-	}
-	'map':       ValueNativeFunction{
-		args: ['list', 'predicate']
-		code: lists_map
-	}
-	'length':    ValueNativeFunction{
-		args: ['list']
-		code: lists_length
-	}
-	'revsersed': ValueNativeFunction{
-		args: ['list']
-		code: lists_reversed
-	}
-	'index':     ValueNativeFunction{
-		args: ['list', 'it']
-		code: lists_index
-	}
-	'contains':  ValueNativeFunction{
-		args: ['list', 'it']
-		code: lists_contains
-	}
-}
+pub const lists_module = [
+	ValueNativeFunction.new('append', ['list', 'value'], lists_append),
+	ValueNativeFunction.new('prepend', ['list', 'value'], lists_prepend),
+	ValueNativeFunction.new('pop', ['list'], lists_pop),
+	ValueNativeFunction.new('delete', ['list', 'index'], lists_delete),
+	ValueNativeFunction.new('clear', ['list'], lists_clear),
+	ValueNativeFunction.new('set', ['list', 'index', 'value'], lists_set),
+	ValueNativeFunction.new('get', ['list', 'index'], lists_get),
+	ValueNativeFunction.new('each', ['list', 'action'], lists_each),
+	ValueNativeFunction.new('tryeach', ['list', 'action'], lists_tryeach),
+	ValueNativeFunction.new('ieach', ['list', 'action'], lists_ieach),
+	ValueNativeFunction.new('tryieach', ['list', 'action'], lists_tryieach),
+	ValueNativeFunction.new('range', ['from', 'to'], lists_range),
+	ValueNativeFunction.new('listof', ['size', 'of'], lists_listof),
+	ValueNativeFunction.new('filter', ['list', 'predicate'], lists_filter),
+	ValueNativeFunction.new('map', ['list', 'predicate'], lists_map),
+	ValueNativeFunction.new('length', ['list'], lists_length),
+	ValueNativeFunction.new('revsersed', ['list'], lists_reversed),
+	ValueNativeFunction.new('index', ['list', 'it'], lists_index),
+	ValueNativeFunction.new('contains', ['list', 'it'], lists_contains),
+]
 
 // apply_lists applies the `lists` module to the given scope.
 @[inline]
 pub fn apply_lists(mut scope Scope) {
-	scope.new('lists', lists_module)
+	mut mod := map[string]Value{}
+	for func in lists_module {
+		mod[func.tracer.source] = func
+	}
+	scope.new('lists', mod)
 }

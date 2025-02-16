@@ -93,12 +93,15 @@ pub fn (mut i Interpreter) import(mut scope Scope, module_path string) Value {
 	}
 
 	path := os.join_path(i.import_root_path, module_path)
+	i.push_trace(path, path, 0, 0)
 	if path !in i.cached_imports {
 		i.cached_imports[path] = i.run_file_isolated(path)
 	}
-	return i.cached_imports[path] or {
+	it := i.cached_imports[path] or {
 		scope.throw('error occurred while indexing sumtype map, this should never happen, please report it!')
 	}
+	i.pop_trace()
+	return it
 }
 
 // run_file tokenizes, parses, and interprets the file at the given path.

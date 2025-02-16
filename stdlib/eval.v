@@ -19,19 +19,17 @@ fn eval_runstring(mut scope Scope) Value {
 	return result
 }
 
-pub const eval_module = {
-	'runfile':   Value(ValueNativeFunction{
-		args: ['path']
-		code: eval_runfile
-	})
-	'runstring': Value(ValueNativeFunction{
-		args: ['string']
-		code: eval_runstring
-	})
-}
+pub const eval_module = [
+	ValueNativeFunction.new('runfile', ['path'], eval_runfile),
+	ValueNativeFunction.new('runstring', ['string'], eval_runstring),
+]
 
 // apply_eval applies the `eval` module to the given scope.
 @[inline]
 pub fn apply_eval(mut scope Scope) {
-	scope.new('eval', eval_module)
+	mut mod := map[string]Value{}
+	for func in eval_module {
+		mod[func.tracer.source] = func
+	}
+	scope.new('eval', mod)
 }

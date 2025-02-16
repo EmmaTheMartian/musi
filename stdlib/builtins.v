@@ -71,7 +71,7 @@ fn builtin_fprint(mut scope Scope) Value {
 	print(scope.eval_function(func, {
 		'string': text
 		'values': values
-	}, 'format') as string)
+	}) as string)
 	return interpreter.null_value
 }
 
@@ -85,7 +85,7 @@ fn builtin_fprintln(mut scope Scope) Value {
 	println(scope.eval_function(func, {
 		'string': text
 		'values': values
-	}, 'format') as string)
+	}) as string)
 	return interpreter.null_value
 }
 
@@ -103,53 +103,23 @@ fn builtin_gettrace(mut scope Scope) Value {
 	return scope.interpreter.stacktrace.array().map(|it| Value('${it.file}:${it.source}:${it.line}:${it.column}'))
 }
 
-pub const builtins = {
-	'import':   Value(ValueNativeFunction{
-		args: ['module']
-		code: builtin_import
-	})
-	'tostring': ValueNativeFunction{
-		args: ['thing']
-		code: builtin_tostring
-	}
-	'tonumber': ValueNativeFunction{
-		args: ['thing']
-		code: builtin_tonumber
-	}
-	'typeof':   ValueNativeFunction{
-		args: ['it']
-		code: builtin_typeof
-	}
-	'print':    ValueNativeFunction{
-		args: ['text']
-		code: builtin_print
-	}
-	'println':  ValueNativeFunction{
-		args: ['text']
-		code: builtin_println
-	}
-	'fprint':   ValueNativeFunction{
-		args: ['text', 'values']
-		code: builtin_fprint
-	}
-	'fprintln': ValueNativeFunction{
-		args: ['text', 'values']
-		code: builtin_fprintln
-	}
-	'panic':    ValueNativeFunction{
-		args: ['text']
-		code: builtin_panic
-	}
-	'gettrace': ValueNativeFunction{
-		args: []
-		code: builtin_gettrace
-	}
-}
+pub const builtins = [
+	ValueNativeFunction.new('import', ['module'], builtin_import),
+	ValueNativeFunction.new('tostring', ['thing'], builtin_tostring),
+	ValueNativeFunction.new('tonumber', ['thing'], builtin_tonumber),
+	ValueNativeFunction.new('typeof', ['it'], builtin_typeof),
+	ValueNativeFunction.new('print', ['text'], builtin_print),
+	ValueNativeFunction.new('println', ['text'], builtin_println),
+	ValueNativeFunction.new('fprint', ['text', 'values'], builtin_fprint),
+	ValueNativeFunction.new('fprintln', ['text', 'values'], builtin_fprintln),
+	ValueNativeFunction.new('panic', ['text'], builtin_panic),
+	ValueNativeFunction.new('gettrace', [], builtin_gettrace),
+]
 
 // apply_builtins adds all builtin functions to the given scope.
 @[inline]
 pub fn apply_builtins(mut scope Scope) {
-	for name, value in builtins {
-		scope.new(name, value)
+	for function in builtins {
+		scope.new(function.tracer.source, function)
 	}
 }

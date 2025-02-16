@@ -61,34 +61,20 @@ fn tables_get(mut scope Scope) Value {
 	return table[key] or { scope.throw('failed to index table with key `${key}`') }
 }
 
-pub const tables_module = {
-	'keys':   Value(ValueNativeFunction{
-		args: ['table']
-		code: tables_keys
-	})
-	'values': ValueNativeFunction{
-		args: ['table']
-		code: tables_values
-	}
-	'pairs':  ValueNativeFunction{
-		args: ['table']
-		code: tables_pairs
-	}
-	'ipairs': ValueNativeFunction{
-		args: ['table']
-		code: tables_ipairs
-	}
-	'set':    ValueNativeFunction{
-		args: ['table', 'key', 'value']
-		code: tables_set
-	}
-	'get':    ValueNativeFunction{
-		args: ['table', 'key']
-		code: tables_get
-	}
-}
+pub const tables_module = [
+	ValueNativeFunction.new('keys', ['table'], tables_keys),
+	ValueNativeFunction.new('values', ['table'], tables_values),
+	ValueNativeFunction.new('pairs', ['table'], tables_pairs),
+	ValueNativeFunction.new('ipairs', ['table'], tables_ipairs),
+	ValueNativeFunction.new('set', ['table', 'key', 'value'], tables_set),
+	ValueNativeFunction.new('get', ['table', 'key'], tables_get),
+]
 
 // apply_tables applies the `tables` to the given scope.
 pub fn apply_tables(mut scope Scope) {
-	scope.new('tables', tables_module)
+	mut mod := map[string]Value{}
+	for func in tables_module {
+		mod[func.tracer.source] = func
+	}
+	scope.new('tables', mod)
 }

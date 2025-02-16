@@ -606,7 +606,7 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 					}
 				}
 			} else {
-				p.throw('attempted to parse non-unary operator. this error should never happen, please report it.')
+				p.throw('attempted to parse non-unary operator (`${token.value}`). this error should never happen, please report it.')
 			}
 			// all other operators are handled below
 		}

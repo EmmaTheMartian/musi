@@ -2,8 +2,8 @@ module interpreter
 
 pub struct Trace {
 pub:
-	file   string
-	source string
-	line   int
-	column int
+	file   string @[required]
+	source string @[required]
+	line   int    @[required]
+	column int    @[required]
 }

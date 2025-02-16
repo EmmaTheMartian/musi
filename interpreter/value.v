@@ -4,23 +4,44 @@ import ast { NodeBlock }
 import tokenizer
 
 pub interface IFunctionValue {
-	args  []string
-	macro bool
+	args   []string
+	macro  bool
+	tracer Trace
 
-	run(mut Scope, map[string]Value, string) Value
+	run(mut Scope, map[string]Value) Value
 }
 
 pub struct ValueNativeFunction implements IFunctionValue {
 pub:
-	code  fn (mut Scope) Value @[required]
-	args  []string
-	macro bool
+	code   fn (mut Scope) Value @[required]
+	args   []string
+	tracer Trace
+	macro  bool
+}
+
+@[inline]
+pub fn ValueNativeFunction.new(name string, args []string, code fn (mut Scope) Value) ValueNativeFunction {
+	return ValueNativeFunction{
+		code:   code
+		args:   args
+		tracer: Trace{'native', name, 0, 0}
+		macro:  false
+	}
+}
+
+@[inline]
+pub fn ValueNativeFunction.new_macro(name string, args []string, code fn (mut Scope) Value) ValueNativeFunction {
+	return ValueNativeFunction{
+		code:   code
+		args:   args
+		tracer: Trace{'native', name, 0, 0}
+		macro:  true
+	}
 }
 
 // run runs the native function using `args` in subscope of the provided scope, then returns the function's returned value.
-// `tracer` is used to add the function's name to the stacktrace.
-pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value, tracer string) Value {
-	s.interpreter.push_trace(s.file, tracer, -1, -1) // TODO: add line/column
+pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value) Value {
+	s.interpreter.stacktrace.push(func.tracer)
 	mut scope := s.make_child()
 	// add args to scope
 	for arg, val in args {
@@ -53,15 +74,15 @@ pub fn (func &ValueNativeFunction) run(mut s Scope, args map[string]Value, trace
 
 pub struct ValueFunction implements IFunctionValue {
 pub:
-	code  NodeBlock
-	args  []string
-	macro bool
+	code   NodeBlock
+	args   []string
+	tracer Trace
+	macro  bool
 }
 
 // run runs the function using `args` in subscope of the provided scope, then returns the function's returned value.
-// `tracer` is used to add the function's name to the stacktrace.
-pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value, tracer string) Value {
-	s.interpreter.push_trace(s.file, tracer, -1, -1) // TODO: add line/column
+pub fn (func &ValueFunction) run(mut s Scope, args map[string]Value) Value {
+	s.interpreter.stacktrace.push(func.tracer)
 	mut scope := s.make_child()
 	// add args to scope
 	for arg, val in args {

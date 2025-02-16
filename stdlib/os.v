@@ -18,19 +18,17 @@ fn os_walk(mut scope Scope) Value {
 	return os.walk_ext(path, '').map(|it| Value(it))
 }
 
-pub const os_module = {
-	'ls':   Value(ValueNativeFunction{
-		args: ['path']
-		code: os_ls
-	})
-	'walk': Value(ValueNativeFunction{
-		args: ['path']
-		code: os_walk
-	})
-}
+pub const os_module = [
+	ValueNativeFunction.new('ls', ['path'], os_ls),
+	ValueNativeFunction.new('walk', ['path'], os_walk),
+]
 
 // apply_os applies the `os` module to the given scope.
 @[inline]
 pub fn apply_os(mut scope Scope) {
-	scope.new('os', os_module)
+	mut mod := map[string]Value{}
+	for func in os_module {
+		mod[func.tracer.source] = func
+	}
+	scope.new('os', mod)
 }

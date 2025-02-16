@@ -94,55 +94,26 @@ fn files_exists(mut scope Scope) Value {
 	return os.exists(scope.get_fn_arg[string]('path', 'exists'))
 }
 
-pub const files_module = {
-	'open':            Value(ValueNativeFunction{
-		args: ['path']
-		code: files_open
-	})
-	'create':          ValueNativeFunction{
-		args: ['path']
-		code: files_create
-	}
-	'close':           ValueNativeFunction{
-		args: ['file']
-		code: files_close
-	}
-	'write':           ValueNativeFunction{
-		args: ['file', 'data']
-		code: files_write
-	}
-	'flush':           ValueNativeFunction{
-		args: ['file']
-		code: files_flush
-	}
-	'getcursorpos':    ValueNativeFunction{
-		args: ['file']
-		code: files_getcursorpos
-	}
-	'setcursorpos':    ValueNativeFunction{
-		args: ['file', 'pos']
-		code: files_setcursorpos
-	}
-	'offsetcursorpos': ValueNativeFunction{
-		args: ['file', 'pos']
-		code: files_offsetcursorpos
-	}
-	'read':            ValueNativeFunction{
-		args: ['file', 'bytes']
-		code: files_read
-	}
-	'size':            ValueNativeFunction{
-		args: ['of']
-		code: files_size
-	}
-	'exists':          ValueNativeFunction{
-		args: ['path']
-		code: files_exists
-	}
-}
+pub const files_module = [
+	ValueNativeFunction.new('open', ['path'], files_open),
+	ValueNativeFunction.new('create', ['path'], files_create),
+	ValueNativeFunction.new('close', ['file'], files_close),
+	ValueNativeFunction.new('write', ['file', 'data'], files_write),
+	ValueNativeFunction.new('flush', ['file'], files_flush),
+	ValueNativeFunction.new('getcursorpos', ['file'], files_getcursorpos),
+	ValueNativeFunction.new('setcursorpos', ['file', 'pos'], files_setcursorpos),
+	ValueNativeFunction.new('offsetcursorpos', ['file', 'pos'], files_offsetcursorpos),
+	ValueNativeFunction.new('read', ['file', 'bytes'], files_read),
+	ValueNativeFunction.new('size', ['of'], files_size),
+	ValueNativeFunction.new('exists', ['path'], files_exists),
+]
 
 // apply_files applies the file i/o module (`files`) to the given scope.
 @[inline]
 pub fn apply_files(mut scope Scope) {
-	scope.new('files', files_module)
+	mut mod := map[string]Value{}
+	for func in files_module {
+		mod[func.tracer.source] = func
+	}
+	scope.new('files', mod)
 }
