@@ -92,9 +92,81 @@ fn macros_lambda(mut scope Scope) Value {
 	return processed
 }
 
+@[inline]
+fn macros_constructor(mut scope Scope) Value {
+	tokens := scope.get_fn_arg[[]Value]('tokens', 'quote')
+
+	mut processed := [Value({
+		'kind':  Value('keyword')
+		'value': 'fn'
+	})]
+
+	mut args := []string{}
+	for index, token in tokens {
+		if token is map[string]Value {
+			kind := token['kind'] or { scope.throw('constructor: token had no `kind`') }
+			value := token['value'] or { scope.throw('constructor: token had no `value`') }
+			if kind == Value('literal') && value == Value(',') {
+				continue
+			}
+			args << value as string
+			processed << Value({
+				'kind':  Value('id')
+				'value': value
+			})
+			if index != tokens.len-1 {
+				processed << Value({
+					'kind':  Value('literal')
+					'value': ','
+				})
+			}
+		}
+	}
+
+	processed << Value({
+		'kind':  Value('keyword')
+		'value': 'do'
+	})
+	processed << Value({
+		'kind':  Value('keyword')
+		'value': 'return'
+	})
+	processed << Value({
+		'kind':  Value('literal')
+		'value': '{'
+	})
+
+	for arg in args {
+		processed << Value({
+			'kind':  Value('id')
+			'value': arg
+		})
+		processed << Value({
+			'kind':  Value('operator')
+			'value': '='
+		})
+		processed << Value({
+			'kind':  Value('id')
+			'value': arg
+		})
+	}
+
+	processed << Value({
+		'kind':  Value('literal')
+		'value': '}'
+	})
+	processed << Value({
+		'kind':  Value('keyword')
+		'value': 'end'
+	})
+
+	return processed
+}
+
 pub const macros_module = [
 	ValueNativeFunction.new_macro('quote', ['tokens'], macros_quote),
 	ValueNativeFunction.new_macro('lambda', ['tokens'], macros_lambda),
+	ValueNativeFunction.new_macro('constructor', ['tokens'], macros_constructor),
 ]
 
 // apply_macros applies the `macros` module to the given scope.

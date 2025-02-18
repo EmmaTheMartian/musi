@@ -20,6 +20,12 @@ pub:
 	code INode
 }
 
+pub struct NodeGroup implements INode {
+	BaseNode
+pub:
+	node INode
+}
+
 pub struct NodeOperator implements INode {
 	BaseNode
 pub:

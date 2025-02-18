@@ -427,7 +427,7 @@ fn (mut p Parser) parse_table() ast.NodeTable {
 			p.skip()
 			p.expect(.operator, '=')
 			p.skip()
-			value := p.parse_single() or { p.throw('unexpected EOF') }
+			value := p.parse_single() or { p.throw('unexpected EOF before `]`') }
 			// optional comma
 			if p.check(.literal, ',') {
 				p.skip()
@@ -446,6 +446,24 @@ fn (mut p Parser) parse_table() ast.NodeTable {
 		line:   tok.line
 		column: tok.column
 		values: data
+	}
+}
+
+// parse_group parses tokens expecting to build an `ast.NodeGroup`.
+// the current node must be the token *after* a `(` literal.
+@[inline]
+fn (mut p Parser) parse_group() ast.NodeGroup {
+	p.expect_n(.literal, '(', -1)
+	tok := p.peek_n(-1)
+	value := p.parse_single() or {
+		p.throw('unexpected EOF before `)`')
+	}
+	p.expect(.literal, ')')
+	p.skip()
+	return ast.NodeGroup{
+		line:   tok.line
+		column: tok.column
+		node:   value
 	}
 }
 
@@ -557,6 +575,8 @@ pub fn (mut p Parser) parse_single(params ParseSingleParams) ?ast.INode {
 				node = p.parse_list()
 			} else if token.value == '{' {
 				node = p.parse_table()
+			} else if token.value == '(' {
+				node = p.parse_group()
 			}
 		}
 		.str {

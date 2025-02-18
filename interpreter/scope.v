@@ -22,13 +22,15 @@ pub mut:
 @[noreturn]
 pub fn (s &Scope) throw(message string) {
 	eprintln('---')
-	eprintln('\033[31mmusi error\033[0m: ${message}')
-	eprintln('\033[31mstacktrace\033[0m:')
 	if s.interpreter.options.coloured_errors {
+		eprintln('\033[31mmusi error\033[0m: ${message} (at \033[32m${s.file}\033[0m:\033[34m${s.line}\033[0m:\033[34m${s.column}\033[0m)')
+		eprintln('\033[31mstacktrace\033[0m:')
 		for trace in s.interpreter.stacktrace.array().reverse() {
 			eprintln('  \033[32m${trace.file}\033[0m:\033[34m${trace.line}\033[0m:\033[34m${trace.column}\033[0m at \033[35m${trace.source}\033[0m')
 		}
 	} else {
+		eprintln('musi error: ${message} (at ${s.file}:${s.line}:${s.column})')
+		eprintln('stacktrace:')
 		for trace in s.interpreter.stacktrace.array().reverse() {
 			eprintln('  ${trace.file}:${trace.source}:${trace.line}:${trace.column}')
 		}
@@ -45,6 +47,9 @@ pub fn (mut s Scope) eval(node &INode) Value {
 	s.line = node.line
 	s.column = node.column
 	match node {
+		ast.NodeGroup {
+			return s.eval(node.node)
+		}
 		ast.NodeInvoke {
 			return s.invoke_node(node)
 		}

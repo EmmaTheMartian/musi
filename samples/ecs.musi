@@ -1,0 +1,49 @@
+# using a bit of macro magic, we can make a minimal ECS implementation
+
+let Entity = {
+	new = macros.@constructor(id, components)
+
+	get_component = fn self, name do
+		let it = null
+		self.components -> lists.tryeach(fn component do
+			if component.name == name do
+				it = component
+				return false
+			end
+			return true
+		end)
+		return it
+	end
+}
+
+let World = {
+	new = macros.@lambda(-> {
+		entities = []
+		next_entity_id = 0
+	})
+
+	## Spawns an entity with the given components, returning the ID of the entity
+	spawn = fn self, components do
+		let id = self.next_entity_id
+		lists.append(self.entities, Entity.new(id, components))
+		self.next_entity_id = self.next_entity_id + 1
+		return id
+	end
+
+	get = fn self, index do
+		return lists.get(self.entities, index)
+	end
+}
+
+let Component = {
+	new = macros.@constructor(name, value)
+}
+
+let IsPerson = Component.new("IsPerson", null)
+let Name = macros.@lambda(name -> Component.new("Name", name))
+let Age = macros.@lambda(age -> Component.new("Age", age))
+
+let world = World.new()
+let gandalf_id = world -> World.spawn([IsPerson, Name("Gandalf"), Age(50000)])
+let gandalf_name = (World.get(world, gandalf_id) -> Entity.get_component("Name")).value
+fprintln('Hello, %!', [gandalf_name])

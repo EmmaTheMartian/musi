@@ -1,0 +1,15 @@
+# objects do not technically exist in musi, but you can use tables and some functions, like so:
+
+# make a "namespace" to hold the functions related to Person
+let Person = {
+	# there's a macro for making simple constructors, which we can use here.
+	new = macros.@constructor(name, age)
+
+	greet = fn self do
+		fprintln('Hello, %!', [self.name])
+	end
+}
+println(Person)
+
+let gandalf = Person.new("Gandalf", 50000)
+Person.greet(gandalf)
